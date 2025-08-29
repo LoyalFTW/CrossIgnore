@@ -3,7 +3,7 @@ local L = addonTable.L
 
 function CrossIgnore:CreateOptionsUI(parent)
     local label = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-    label:SetPoint("TOPLEFT", 10, -10)
+    label:SetPoint("TOP", 0, -12)
     label:SetText(L["CI_OPTIONS"])
 
     local lfgLabel = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")

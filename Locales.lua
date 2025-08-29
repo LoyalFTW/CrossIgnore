@@ -25,9 +25,11 @@ local Locales = {
         BANNED_WORDS_HEADER2 = "Banned Words",
         CHAT_TYPE_HEADER     = "Chat Type",
         STRICT_BAN_HEADER    = "Strict Ban",
+		CHANNEL_SERVICES     = "trade (services) - city",
+		OLD_CHANNEL_SERVICES = "4. Services",
 
         STRICT_BAN_TOOLTIP_TITLE = "Strict Ban",
-        STRICT_BAN_TOOLTIP_TEXT  = "Blocks the word even if letters/numbers follow it.\\nExample: 'wts' will block 'wts', 'wts123', 'wtsepic'.\\nNon-Strict only blocks the exact word.",
+        STRICT_BAN_TOOLTIP_TEXT  = "Blocks the word even if letters/numbers follow it.\nExample: 'wts' will block 'wts', 'wts123', 'wtsepic'.\\nNon-Strict only blocks the exact word.",
 
         CHANNEL_ALL          = "All Channels",
         CHANNEL_SAY          = "Say",
@@ -104,6 +106,8 @@ local Locales = {
         BANNED_WORDS_HEADER2 = "Запрещенные слова",
         CHAT_TYPE_HEADER     = "Тип чата",
         STRICT_BAN_HEADER    = "Строгий запрет",
+		CHANNEL_SERVICES     = "Торговля (услуги): Город",
+		OLD_CHANNEL_SERVICES = "4. Услуги",
 
         STRICT_BAN_TOOLTIP_TITLE = "Строгий запрет",
         STRICT_BAN_TOOLTIP_TEXT  = "Блокирует слово, даже если за ним следуют буквы или цифры.\nПример: 'wts' заблокирует 'wts', 'wts123', 'wtsepic'.\nНЕстрогий вариант блокирует только точное слово.",
