@@ -1,4 +1,4 @@
-## Interface: 110200
+## Interface: 110205, 110200
 ## Title: Cross|cffff7d0aIgnore
 ## Author: Jay
 ## 1.1 Maintainer: Jay @ Tichondrius
