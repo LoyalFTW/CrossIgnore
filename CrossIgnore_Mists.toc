@@ -1,4 +1,4 @@
-## Interface: 50503, 50504
+## Interface: 50504
 ## Title: Cross|cffff7d0aIgnore
 ## Author: Jay
 ## Version: @project-version@
