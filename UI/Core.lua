@@ -416,7 +416,6 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
     end
 
     activeAddon:AddIgnore(fullName)
-    print(string.format(L["ADD_PLAYER_SUCCESS"] or "Added %s to CrossIgnore.", fullName))
     activeAddon:RefreshBlockedList(UI.State.ignoreFilterText or "")
     UI:HideAddPlayerPopup()
   end

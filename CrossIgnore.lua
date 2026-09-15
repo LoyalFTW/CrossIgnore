@@ -611,6 +611,8 @@ function CrossIgnore:AddIgnore(name, note, duration)
 
     self:EnsureGlobalPresence(entry, maxIgnoreLimit)
 
+    self:Print(string.format(L["ADD_PLAYER_SUCCESS"] or "Added %s to CrossIgnore.", fullName))
+
     if CrossIgnoreUI and CrossIgnoreUI:IsShown() then
         self:RefreshBlockedList()
     end
@@ -718,6 +720,12 @@ function CrossIgnore:CrossIgnore_UnitMenu(owner, root, contextData)
     self:CreateBlockUnblockButton(root, fullName)
 end
 
+function CrossIgnore:CrossIgnore_PlayerNameMenu(owner, root, contextData)
+    if not contextData or not contextData.name then return end
+    local fullName = self:NormalizePlayerName(contextData.name .. (contextData.server and contextData.server ~= "" and "-" .. contextData.server or ""))
+    self:CreateBlockUnblockButton(root, fullName)
+end
+
 function CrossIgnore:ClearLFGCache()
     if self.LFGCacheTimer then
         self.LFGCacheTimer:Cancel()
@@ -800,12 +808,11 @@ function CrossIgnore:HookFunctions()
             end
         end
 
-        Menu.ModifyMenu("MENU_CHAT_ROSTER", function(owner, root)
-            local name = owner and owner.name
-            if not name then return end
-            local fullName = self:NormalizePlayerName(name)
-            self:CreateBlockUnblockButton(root, fullName)
-        end)
+        for _, menu in ipairs({"MENU_UNIT_FRIEND", "MENU_UNIT_FRIEND_OFFLINE", "MENU_UNIT_CHAT_ROSTER"}) do
+            Menu.ModifyMenu(menu, function(...)
+                self:CrossIgnore_PlayerNameMenu(...)
+            end)
+        end
     end
 end
 
