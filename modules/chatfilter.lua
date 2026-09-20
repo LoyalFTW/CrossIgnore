@@ -1,6 +1,9 @@
 local ChatFilter = CrossIgnore.ChatFilter or {}
 CrossIgnore.ChatFilter = ChatFilter
 
+local AddMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
+local RemoveMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.RemoveMessageEventFilter) or ChatFrame_RemoveMessageEventFilter
+
 local CHAT_EVENTS = {
     Say          = { "CHAT_MSG_SAY" },
     Yell         = { "CHAT_MSG_YELL" },
@@ -422,7 +425,9 @@ end
 function ChatFilter:UpdateEventRegistration()
     for _, events in pairs(CHAT_EVENTS) do
         for _, ev in ipairs(events) do
-            pcall(ChatFrame_RemoveMessageEventFilter, ev, ChatEventFilter)
+            if RemoveMessageEventFilter then
+                pcall(RemoveMessageEventFilter, ev, ChatEventFilter)
+            end
         end
     end
 
@@ -454,7 +459,9 @@ function ChatFilter:UpdateEventRegistration()
 
         if shouldHook then
             for _, ev in ipairs(events) do
-                pcall(ChatFrame_AddMessageEventFilter, ev, ChatEventFilter)
+                if AddMessageEventFilter then
+                    pcall(AddMessageEventFilter, ev, ChatEventFilter)
+                end
             end
         end
     end

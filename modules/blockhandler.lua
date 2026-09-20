@@ -1,5 +1,7 @@
 local BlockHandler = {}
 
+local AddMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
+
 local BLOCK_CHAT_EVENTS = {
     "CHAT_MSG_SAY",
     "CHAT_MSG_YELL",
@@ -34,17 +36,42 @@ local BLOCK_MISC_EVENTS = {
 
 local BLOCK_BLIZZ_EVENTS = {
     "CHAT_MSG_SYSTEM",
+    "CHAT_MSG_BG_SYSTEM_ALLIANCE",
+    "CHAT_MSG_BG_SYSTEM_HORDE",
+    "CHAT_MSG_BG_SYSTEM_NEUTRAL",
     "CHAT_MSG_LOOT",
     "CHAT_MSG_MONEY",
     "CHAT_MSG_CURRENCY",
     "CHAT_MSG_COMBAT_XP_GAIN",
+    "CHAT_MSG_COMBAT_HONOR_GAIN",
     "CHAT_MSG_COMBAT_FACTION_CHANGE",
     "CHAT_MSG_SKILL",
+    "CHAT_MSG_TRADESKILLS",
+    "CHAT_MSG_PET_INFO",
     "CHAT_MSG_ACHIEVEMENT",
     "CHAT_MSG_GUILD_ACHIEVEMENT",
     "CHAT_MSG_OPENING",
     "CHAT_MSG_CHANNEL_NOTICE",
+    "CHAT_MSG_CHANNEL_NOTICE_USER",
+    "CHAT_MSG_MONSTER_SAY",
+    "CHAT_MSG_MONSTER_YELL",
+    "CHAT_MSG_MONSTER_EMOTE",
+    "CHAT_MSG_MONSTER_WHISPER",
+    "CHAT_MSG_RAID_BOSS_EMOTE",
+    "CHAT_MSG_RAID_BOSS_WHISPER",
 }
+
+local BLOCK_BLIZZ_EVENT_LOOKUP = {}
+for _, event in ipairs(BLOCK_BLIZZ_EVENTS) do
+    BLOCK_BLIZZ_EVENT_LOOKUP[event] = true
+end
+
+local function IsChatterBoxLoaded()
+    if C_AddOns and C_AddOns.IsAddOnLoaded then
+        return C_AddOns.IsAddOnLoaded("ChatterBox")
+    end
+    return IsAddOnLoaded and IsAddOnLoaded("ChatterBox")
+end
 
 local function IsBlockedPlayer(sender)
     if not sender then return false end
@@ -99,6 +126,28 @@ local function BlizzardEventFilter(_, event, msg, sender, ...)
     return true
 end
 
+local function HookChatterBoxEventFrame()
+    if not IsChatterBoxLoaded() or not GetFramesRegisteredForEvent then return end
+
+    local frames = { GetFramesRegisteredForEvent("CHAT_MSG_SYSTEM") }
+    for _, frame in ipairs(frames) do
+        if frame and not frame.__CrossIgnoreChatterBoxHooked
+            and frame:IsEventRegistered("SPELLS_CHANGED")
+            and frame:IsEventRegistered("UPDATE_INVENTORY_DURABILITY")
+            and frame:IsEventRegistered("FRIENDLIST_UPDATE")
+            and frame:IsEventRegistered("BN_FRIEND_INFO_CHANGED") then
+            local handler = frame:GetScript("OnEvent")
+            if handler then
+                frame.__CrossIgnoreChatterBoxHooked = true
+                frame:SetScript("OnEvent", function(self, event, ...)
+                    if BLOCK_BLIZZ_EVENT_LOOKUP[event] and BlizzardEventFilter(nil, event, ...) then return end
+                    handler(self, event, ...)
+                end)
+            end
+        end
+    end
+end
+
 
 local function BlockEventFrameHandler(self, event, ...)
     local name = UnitName("npc") or UnitName("target") or UnitName("mouseover")
@@ -112,12 +161,14 @@ local function BlockEventFrameHandler(self, event, ...)
 end
 
 function BlockHandler:Register()
-    for _, event in ipairs(BLOCK_CHAT_EVENTS) do
-        ChatFrame_AddMessageEventFilter(event, ChatEventFilter)
-    end
+    if AddMessageEventFilter then
+        for _, event in ipairs(BLOCK_CHAT_EVENTS) do
+            pcall(AddMessageEventFilter, event, ChatEventFilter)
+        end
 
-    for _, event in ipairs(BLOCK_BLIZZ_EVENTS) do
-        ChatFrame_AddMessageEventFilter(event, BlizzardEventFilter)
+        for _, event in ipairs(BLOCK_BLIZZ_EVENTS) do
+            pcall(AddMessageEventFilter, event, BlizzardEventFilter)
+        end
     end
 
     local frame = CreateFrame("Frame")
@@ -127,6 +178,13 @@ function BlockHandler:Register()
     frame:SetScript("OnEvent", BlockEventFrameHandler)
 
     HookWhisperFrames()
+
+    local compatibilityFrame = CreateFrame("Frame")
+    compatibilityFrame:RegisterEvent("PLAYER_LOGIN")
+    compatibilityFrame:SetScript("OnEvent", function()
+        C_Timer.After(0, HookChatterBoxEventFrame)
+    end)
+    C_Timer.After(0, HookChatterBoxEventFrame)
 
 local whisperFrame = CreateFrame("Frame")
 whisperFrame:RegisterEvent("CHAT_MSG_WHISPER")
