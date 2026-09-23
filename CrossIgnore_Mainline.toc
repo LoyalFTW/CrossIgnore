@@ -37,6 +37,7 @@ CrossIgnore.lua
 modules/chatfilter.lua
 modules/chatfilterdefaults.lua
 modules/blockhandler.lua
+modules/guildignore.lua
 modules/rightclick.lua
 modules/importexport.lua
 
@@ -55,6 +56,7 @@ Data/Words.lua
 Data/Realms.lua
 
 UI/IgnoreList.lua
+UI/GuildIgnore.lua
 UI/WordFilter.lua
 UI/Core.lua
 

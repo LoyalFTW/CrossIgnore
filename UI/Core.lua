@@ -454,11 +454,12 @@ local function BuildLeftNav(leftPanel, panels, CrossIgnore)
 
   local buttons = {
     ignoreList   = Btn(leftPanel, L["IGNORE_LIST_HEADER"], 0, -10, 120, 40),
-    chatFilter   = Btn(leftPanel, L["CHAT_FILTER_HEADER"], 0, -60, 120, 40),
-    optionsMain  = Btn(leftPanel, L["OPTIONS_HEADER"], 0, -110, 120, 40),
-    optionsIgnore= Btn(leftPanel, L["OPTIONS_IGNORE"], 10, -155, 110, 30),
-    optionsEI    = Btn(leftPanel, L["OPTIONS_E_I"], 10, -190, 110, 30),
-    chatFilterDebug = Btn(leftPanel, "ChatFilter DeBug", 10, -225, 110, 30),
+    guildIgnore = Btn(leftPanel, L["GUILD_IGNORE_TAB"] or "Guild Ignore", 0, -60, 120, 40),
+    chatFilter   = Btn(leftPanel, L["CHAT_FILTER_HEADER"], 0, -110, 120, 40),
+    optionsMain  = Btn(leftPanel, L["OPTIONS_HEADER"], 0, -160, 120, 40),
+    optionsIgnore= Btn(leftPanel, L["OPTIONS_IGNORE"], 10, -205, 110, 30),
+    optionsEI    = Btn(leftPanel, L["OPTIONS_E_I"], 10, -240, 110, 30),
+    chatFilterDebug = Btn(leftPanel, "ChatFilter DeBug", 10, -275, 110, 30),
   }
   buttons.optionsIgnore:Hide()
   buttons.optionsEI:Hide()
@@ -480,6 +481,7 @@ local function BuildLeftNav(leftPanel, panels, CrossIgnore)
 
   local optionsConfig = {
     { btn = buttons.ignoreList, panel = panels.ignoreList, func = function() CrossIgnore:RefreshBlockedList(UI.State.ignoreFilterText or "") end },
+    { btn = buttons.guildIgnore, panel = panels.guildIgnore, func = function() UI.GuildIgnore:Refresh() end },
     { btn = buttons.chatFilter, panel = panels.chatFilter, func = function() CrossIgnore:UpdateWordsList(UI.State.wordFilterText or "") end },
     { btn = buttons.optionsMain, panel = panels.optionsMain, func = function()
       if not CrossIgnore.optionsBuilt and CrossIgnore.CreateOptionsUI then CrossIgnore:CreateOptionsUI(panels.optionsMain); CrossIgnore.optionsBuilt = true end
@@ -567,6 +569,7 @@ function UI:BuildMainFrame(CrossIgnore, CrossIgnoreDB)
 
   local panels = {
     ignoreList   = CreateFrame("Frame", nil, rightPanel),
+    guildIgnore = CreateFrame("Frame", nil, rightPanel),
     chatFilter   = CreateFrame("Frame", nil, rightPanel),
     optionsMain  = CreateFrame("Frame", nil, rightPanel),
     optionsIgnore= CreateFrame("Frame", nil, rightPanel),

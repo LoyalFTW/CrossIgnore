@@ -48,6 +48,8 @@ function CrossIgnore:InitDB()
             players = {},
             overLimitPlayers = {},
             pendingRemovals = {},
+            guildIgnores = {},
+            guildKnowledge = {},
             filters = {
                 words = {
                     ["All Channels"] = {},
@@ -101,6 +103,8 @@ function CrossIgnore:OnInitialize()
         if self.BlockHandler.Initialize then self.BlockHandler:Initialize() end
         if self.BlockHandler.Register then self.BlockHandler:Register() end
     end
+
+    if self.GuildIgnore then self.GuildIgnore:Initialize() end
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("CrossIgnore", options, {"CrossIgnore", "ci"})
 

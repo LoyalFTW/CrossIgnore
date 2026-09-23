@@ -17,6 +17,11 @@ function CrossIgnore:CreateUI()
     UI.IgnoreListBuilt = true
   end
 
+  if not UI.GuildIgnoreBuilt then
+    UI.GuildIgnore:Build(panels.guildIgnore, self)
+    UI.GuildIgnoreBuilt = true
+  end
+
   if not UI.WordFilterBuilt then
     UI.WordFilter:Build(panels.chatFilter, self, CrossIgnoreDB)
     UI.WordFilterBuilt = true
