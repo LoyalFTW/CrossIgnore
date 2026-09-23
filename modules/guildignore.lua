@@ -134,20 +134,27 @@ function GuildIgnore:ObserveGroup()
 end
 
 function GuildIgnore:HarvestWho()
-    if not C_FriendList or not C_FriendList.GetNumWhoResults or not C_FriendList.GetWhoInfo then return end
-    local count = C_FriendList.GetNumWhoResults() or 0
+    local countFunction = C_FriendList and C_FriendList.GetNumWhoResults or GetNumWhoResults
+    local infoFunction = C_FriendList and C_FriendList.GetWhoInfo or GetWhoInfo
+    if not countFunction or not infoFunction then return end
+    local count = countFunction() or 0
     for i = 1, count do
-        local info = C_FriendList.GetWhoInfo(i)
-        if Readable(info) and info and Readable(info.fullName) and Readable(info.fullGuildName) then
-            self:Remember(info.fullName, info.fullGuildName or "")
+        local first, second = infoFunction(i)
+        if Readable(first) and type(first) == "table" then
+            if Readable(first.fullName) and Readable(first.fullGuildName) then
+                self:Remember(first.fullName, first.fullGuildName or "")
+            end
+        elseif Readable(first) and Readable(second) then
+            self:Remember(first, second or "")
         end
     end
 end
 
 function GuildIgnore:LookUpPlayer(name)
     name = Clean(name)
-    if not name or not C_FriendList or not C_FriendList.SendWho then return false end
-    local ok = pcall(C_FriendList.SendWho, 'n-"' .. name .. '"')
+    local sendWho = C_FriendList and C_FriendList.SendWho or SendWho
+    if not name or not sendWho then return false end
+    local ok = pcall(sendWho, 'n-"' .. name .. '"')
     return ok
 end
 
@@ -180,12 +187,13 @@ function GuildIgnore:PurgeChatNow()
 end
 
 local function ScanBubbles()
-    if not C_ChatBubbles or not C_ChatBubbles.GetAllChatBubbles then return end
+    local getBubbles = C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles or GetAllChatBubbles
+    if not getBubbles then return end
     local now = GetTime()
     for text, expires in pairs(pendingBubbles) do
         if expires < now then pendingBubbles[text] = nil end
     end
-    local bubbles = C_ChatBubbles.GetAllChatBubbles(false)
+    local bubbles = getBubbles(false)
     local seen = {}
     for _, bubble in pairs(bubbles or {}) do
         local frame = bubble.GetChildren and bubble:GetChildren()
@@ -217,7 +225,7 @@ local function ScanBubbles()
 end
 
 function GuildIgnore:HideBubble(event, message)
-    if not BUBBLE_EVENTS[event] or not Clean(message) or not C_ChatBubbles then return end
+    if not BUBBLE_EVENTS[event] or not Clean(message) or not ((C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles) or GetAllChatBubbles) then return end
     pendingBubbles[message] = GetTime() + 1
     if not bubbleTicker then bubbleTicker = C_Timer.NewTicker(0.1, ScanBubbles) end
 end
@@ -265,7 +273,7 @@ function GuildIgnore:Initialize()
     end
     local frame = CreateFrame("Frame")
     for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_FOCUS_CHANGED", "NAME_PLATE_UNIT_ADDED", "GROUP_ROSTER_UPDATE", "WHO_LIST_UPDATE", "PLAYER_GUILD_UPDATE" }) do
-        frame:RegisterEvent(event)
+        pcall(frame.RegisterEvent, frame, event)
     end
     frame:SetScript("OnEvent", function(_, event, unit)
         if event == "WHO_LIST_UPDATE" then self:HarvestWho()
