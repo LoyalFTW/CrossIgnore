@@ -122,7 +122,7 @@ function GuildIgnore:ObserveUnit(unit, authoritative)
     if not Readable(guild) or (not Clean(guild) and not authoritative) then return end
     local name, realm = UnitName(unit)
     if not Clean(name) or not Readable(realm) then return end
-    self:Remember(realm and realm ~= "" and name .. "-" .. realm or name, guild or "")
+    self:Remember(not CrossIgnore.isForever and realm and realm ~= "" and name .. "-" .. realm or name, guild or "")
 end
 
 function GuildIgnore:ObserveGroup()

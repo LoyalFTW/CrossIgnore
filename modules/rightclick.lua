@@ -80,6 +80,8 @@ function CrossIgnore:ShowSetExpiryPopup(entry)
             local newEntry = {
                 name = entry.name,
                 server = entry.server,
+                firstName = entry.firstName,
+                lastName = entry.lastName,
                 expires = expiresAt,
                 lastModifiedExpires = time(),
             }

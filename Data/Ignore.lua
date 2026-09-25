@@ -16,6 +16,11 @@ function Data.BuildPlayerList(CrossIgnore, filterText)
   local function add(src)
     for _, data in ipairs(src or {}) do
       local name = data.name or ""
+      if CrossIgnore.isForever and (not data.firstName or not data.lastName) then
+        local firstName, lastName = name:match("^(%S+)%s+(%S+)$")
+        data.firstName = data.firstName or firstName
+        data.lastName = data.lastName or lastName
+      end
       if filterText == "" or safeLower(name):find(filterText, 1, true) then
         out[#out+1] = data
       end

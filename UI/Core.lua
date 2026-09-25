@@ -140,6 +140,7 @@ function UI:HideAddPlayerPopup()
   if not popup then return end
 
   popup.nameBox:SetText("")
+  popup.surnameBox:SetText("")
   if popup.SetSelectedRealm then
     popup:SetSelectedRealm(popup.defaultRealm)
   end
@@ -155,6 +156,11 @@ function UI:ShowAddPlayerPopup(CrossIgnore)
 
   popup.CrossIgnore = CrossIgnore
   popup.nameBox:SetText("")
+  popup.surnameBox:SetText("")
+  popup.surnameLabel:SetShown(CrossIgnore.isForever)
+  popup.surnameBox:SetShown(CrossIgnore.isForever)
+  popup.serverLabel:SetShown(not CrossIgnore.isForever)
+  popup.realmButton:SetShown(not CrossIgnore.isForever)
   if popup.RefreshRealmOptions then
     popup:RefreshRealmOptions()
   end
@@ -225,11 +231,16 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
 
   W:CreateLabel(popup, L["ADD_PLAYER_POPUP_TITLE"] or "Add Ignored Player", "TOP", 0, -20, "GameFontHighlight")
 
-  local nameLabel = W:CreateLabel(popup, L["PLAYER_NAME_HEADER"], "TOPLEFT", 24, -58, "GameFontNormal")
+  local nameLabel = W:CreateLabel(popup, CrossIgnore.isForever and (L["FOREVER_FIRST_NAME"] or "First Name") or L["PLAYER_NAME_HEADER"], "TOPLEFT", 24, -58, "GameFontNormal")
   local nameBox = W:CreateEditBox(popup, 292, 24, "TOPLEFT", 24, -80)
-  W:AttachPlaceholder(nameBox, L["ADD_PLAYER_NAME_PLACEHOLDER"] or "Player name")
+  W:AttachPlaceholder(nameBox, CrossIgnore.isForever and (L["FOREVER_FIRST_NAME"] or "First Name") or (L["ADD_PLAYER_NAME_PLACEHOLDER"] or "Player name"))
 
   local serverLabel = W:CreateLabel(popup, L["SERVER_HEADER"], "TOPLEFT", 24, -114, "GameFontNormal")
+  local surnameLabel = W:CreateLabel(popup, L["FOREVER_LAST_NAME"] or "Last Name", "TOPLEFT", 24, -114, "GameFontNormal")
+  local surnameBox = W:CreateEditBox(popup, 292, 24, "TOPLEFT", 24, -136)
+  W:AttachPlaceholder(surnameBox, L["FOREVER_LAST_NAME"] or "Last Name")
+  surnameLabel:Hide()
+  surnameBox:Hide()
   local defaultRealm = NormalizeRealmToken(GetNormalizedRealmName and GetNormalizedRealmName() or nil) or "Unknown"
   local realmButton = CreateFrame("Button", nil, popup, "UIPanelButtonTemplate")
   realmButton:SetSize(292, 24)
@@ -401,12 +412,17 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
     local activeAddon = popup.CrossIgnore or CrossIgnore
     if not activeAddon then return end
 
-    local realm = popup:GetSelectedRealm()
     local rawName = strtrim(nameBox:GetText() or "")
-    local playerName = rawName:match("^[^%-]+") or rawName
-    local fullName, base, normalizedRealm = activeAddon:NormalizePlayerName(playerName .. "-" .. realm)
-    if not fullName or not base or not normalizedRealm then
-      print(L["ADD_PLAYER_INVALID"] or "Enter a player and server name.")
+    local playerName
+    if activeAddon.isForever then
+      playerName = rawName .. " " .. strtrim(surnameBox:GetText() or "")
+    else
+      local realm = popup:GetSelectedRealm()
+      playerName = (rawName:match("^[^%-]+") or rawName) .. "-" .. realm
+    end
+    local fullName, base, normalizedRealm = activeAddon:NormalizePlayerName(playerName)
+    if not fullName or not base or normalizedRealm == nil then
+      print(activeAddon.isForever and (L["FOREVER_ADD_PLAYER_INVALID"] or "Enter both first and last names.") or (L["ADD_PLAYER_INVALID"] or "Enter a player and server name."))
       return
     end
 
@@ -421,8 +437,13 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
   end
 
   nameBox:SetScript("OnEnterPressed", function()
-    realmButton:Click()
+    if (popup.CrossIgnore or CrossIgnore).isForever then
+      surnameBox:SetFocus()
+    else
+      realmButton:Click()
+    end
   end)
+  surnameBox:SetScript("OnEnterPressed", SubmitAddPlayer)
 
   local addButton = W:CreateButton(popup, L["ADD_PLAYER_BTN"] or "Add Player", "BOTTOMLEFT", 24, 22, 128, 24, SubmitAddPlayer)
   local cancelButton = W:CreateButton(popup, L["CANCEL"] or "Cancel", "BOTTOMRIGHT", -24, 22, 128, 24, function()
@@ -432,6 +453,8 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
   popup.nameLabel = nameLabel
   popup.serverLabel = serverLabel
   popup.nameBox = nameBox
+  popup.surnameLabel = surnameLabel
+  popup.surnameBox = surnameBox
   popup.serverBox = realmButton
   popup.realmButton = realmButton
   popup.realmDropdown = realmDropdown

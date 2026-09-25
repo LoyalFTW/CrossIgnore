@@ -83,19 +83,30 @@ function M:Build(panel, CrossIgnore)
   end)
   UI.Frames.accountWideCheckbox = accountWideCheckbox
 
-  local columns = {
-    { key="name",    label=L["PLAYER_NAME_HEADER"], width=100 },
-    { key="server",  label=L["SERVER_HEADER"],      width=80, format=function(_, e) return e.server or e.realm or "" end },
-    { key="added",   label=L["ADDED_HEADER"],       width=60, format=function(v) return FormatElapsedTime(v) end },
-    { key="expires", label=L["EXPIRES_HEADER"],     width=60, format=function(v) return FormatExpiresTime(v) end },
-    { key="note",    label=L["NOTE_HEADER"],        width=60, format=function(_, e) return e.note or e.notes or "" end, noWrap=true, maxLines=1, onEnter=NoteTooltipOnEnter },
-  }
+  local columns
+  if CrossIgnore.isForever then
+    columns = {
+      { key="firstName", label=L["FOREVER_FIRST_NAME"] or "First Name", width=100 },
+      { key="lastName", label=L["FOREVER_LAST_NAME"] or "Last Name", width=100 },
+      { key="added", label=L["ADDED_HEADER"], width=60, format=function(v) return FormatElapsedTime(v) end },
+      { key="expires", label=L["EXPIRES_HEADER"], width=60, format=function(v) return FormatExpiresTime(v) end },
+      { key="note", label=L["NOTE_HEADER"], width=80, format=function(_, e) return e.note or e.notes or "" end, noWrap=true, maxLines=1, onEnter=NoteTooltipOnEnter },
+    }
+  else
+    columns = {
+      { key="name", label=L["PLAYER_NAME_HEADER"], width=100 },
+      { key="server", label=L["SERVER_HEADER"], width=80, format=function(_, e) return e.server or e.realm or "" end },
+      { key="added", label=L["ADDED_HEADER"], width=60, format=function(v) return FormatElapsedTime(v) end },
+      { key="expires", label=L["EXPIRES_HEADER"], width=60, format=function(v) return FormatExpiresTime(v) end },
+      { key="note", label=L["NOTE_HEADER"], width=60, format=function(_, e) return e.note or e.notes or "" end, noWrap=true, maxLines=1, onEnter=NoteTooltipOnEnter },
+    }
+  end
 
   self.table = TableWidget:New(panel, {
     columns = columns,
     width = 410,
     height = 320 + Theme.header.height,
-    defaultSortKey = "name",
+    defaultSortKey = CrossIgnore.isForever and "firstName" or "name",
     defaultSortAsc = true,
   })
   self.table:GetFrame():SetPoint("TOPLEFT", 10, -70)

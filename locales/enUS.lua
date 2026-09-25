@@ -21,6 +21,9 @@ addonTable.Locales.enUS = {
 
 
     PLAYER_NAME_HEADER   = "Player Name",
+    FOREVER_FIRST_NAME   = "First Name",
+    FOREVER_LAST_NAME    = "Last Name",
+    FOREVER_ADD_PLAYER_INVALID = "Enter both first and last names.",
     SERVER_HEADER        = "Server",
     NOTE_HEADER          = "Note",
     ADDED_HEADER         = "Added",

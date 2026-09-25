@@ -3,6 +3,8 @@ local addonName, addonTable = ...
 local L = addonTable.L
 
 local currentRealm = GetNormalizedRealmName()
+local interfaceVersion = tonumber((select(4, GetBuildInfo()))) or 0
+CrossIgnore.isForever = interfaceVersion >= 16000 and interfaceVersion < 20000
 
 local options = {
     name = "CrossIgnore",
@@ -169,9 +171,9 @@ function CrossIgnore:OnEnable()
 end
 
 local function StripRealm(name) return (name and name:match("^[^%-]+")) or name end
-local function MakeKey(base, realm) if not base or not realm then return nil end return base .. "-" .. realm end
+local function MakeKey(base, realm) if not base or realm == nil then return nil end return realm ~= "" and (base .. "-" .. realm) or base end
 local function ToSafeString(value)
-    if value == nil then
+    if value == nil or (canaccessvalue and not canaccessvalue(value)) then
         return nil
     end
 
@@ -248,6 +250,17 @@ function CrossIgnore:NormalizePlayerName(name)
     local safeName = ToSafeString(name)
     if not safeName or safeName == "" then return nil, nil, nil end
 
+    safeName = strtrim(safeName)
+    if self.isForever then
+        local first, last = safeName:match("^([^%s%-]+)[%s%-]+([^%s%-]+)$")
+        if not first then
+            first, last = safeName:match("^([^%s%-]+)[%s%-]+([^%s%-]+)%-[^%s%-]+$")
+        end
+        if not first or not last then return nil, nil, nil end
+        local fullName = first .. " " .. last
+        return fullName, fullName, ""
+    end
+
     local base, realm = strsplit("-", safeName)
     if not base or base == "" then return nil, nil, nil end
     realm = realm or currentRealm or GetNormalizedRealmName() or "Unknown"
@@ -304,8 +317,8 @@ function CrossIgnore:ClearAllIgnoredPlayers()
         for _, entry in ipairs(list or {}) do
             local name = entry.name
             local realm = entry.server or entry.realm
-            if name and realm then
-                snapshot[#snapshot + 1] = name .. "-" .. realm
+            if name and realm ~= nil then
+                snapshot[#snapshot + 1] = MakeKey(name, realm)
             end
         end
     end
@@ -405,6 +418,8 @@ function CrossIgnore:EnsureGlobalPresence(entry, maxIgnoreLimit)
                 end
 
                 if entry.addedBy then p.addedBy = entry.addedBy end
+                if entry.firstName then p.firstName = entry.firstName end
+                if entry.lastName then p.lastName = entry.lastName end
                 if entry.source   then p.source   = entry.source end
                 if entry.type     then p.type     = entry.type end
                 if entry.ignored ~= nil then p.ignored = entry.ignored end
@@ -446,22 +461,23 @@ end
 
 function CrossIgnore:RemoveFromAllAddonLists(base, realm)
     local function removeFromList(list)
+        local removed = false
         for i = #list, 1, -1 do
             local p = list[i]
             if p.name == base and p.server == realm then
-					if self.maybeMarkPendingRemoval and self:maybeMarkPendingRemoval(base, realm, p.addedBy) then
-                    table.remove(list, i)
-                    return
-                end
+                if self.maybeMarkPendingRemoval then self:maybeMarkPendingRemoval(base, realm, p.addedBy) end
                 table.remove(list, i)
+                removed = true
             end
         end
+        return removed
     end
 
-    removeFromList(self.charDB.profile.players)
-    removeFromList(self.charDB.profile.overLimitPlayers or {})
-    removeFromList(self.globalDB.global.players or {})
-    removeFromList(self.globalDB.global.overLimitPlayers or {})
+    local removed = removeFromList(self.charDB.profile.players)
+    removed = removeFromList(self.charDB.profile.overLimitPlayers or {}) or removed
+    removed = removeFromList(self.globalDB.global.players or {}) or removed
+    removed = removeFromList(self.globalDB.global.overLimitPlayers or {}) or removed
+    return removed
 end
 
 function CrossIgnore:GetBlizzardIgnoreSet()
@@ -471,7 +487,7 @@ function CrossIgnore:GetBlizzardIgnoreSet()
         local playerName = C_FriendList.GetIgnoreName(i)
         if playerName then
             local _, name, server = self:NormalizePlayerName(playerName)
-            if name and server then ignoreSet[MakeKey(name, server)] = true end
+            if name and server ~= nil then ignoreSet[MakeKey(name, server)] = true end
         end
     end
     return ignoreSet
@@ -511,7 +527,12 @@ function CrossIgnore:UpdateIgnoreList()
 
     for blizzName in pairs(blizzSet) do
         if not addonSet[blizzName] then
-            local base, realm = strsplit("-", blizzName)
+            local base, realm
+            if self.isForever then
+                base, realm = blizzName, ""
+            else
+                base, realm = strsplit("-", blizzName)
+            end
 
             local existingNote, existingExpires = "", 0
 
@@ -544,6 +565,8 @@ function CrossIgnore:UpdateIgnoreList()
             local entry = {
                 name     = base,
                 server   = realm,
+                firstName = self.isForever and base:match("^(%S+)") or nil,
+                lastName = self.isForever and base:match("^%S+%s+(%S+)$") or nil,
                 added    = time(),
                 ignored  = true,
                 source   = "blizzard",
@@ -575,9 +598,9 @@ end
 
 function CrossIgnore:AddIgnore(name, note, duration)
     local fullName, base, realm = self:NormalizePlayerName(name)
-    if not base or not realm then
+    if not base or realm == nil then
         realm = GetNormalizedRealmName()
-        if not base or not realm then return end
+        if not base or realm == nil then return end
     end
 
     if self:IsPlayerInAnyList(base, realm) then return end
@@ -595,6 +618,8 @@ function CrossIgnore:AddIgnore(name, note, duration)
     local entry = {
         name       = base,
         server     = realm,
+        firstName  = self.isForever and base:match("^(%S+)") or nil,
+        lastName   = self.isForever and base:match("^%S+%s+(%S+)$") or nil,
         added      = time(),
         ignored    = true,
         source     = "blizzard",
@@ -635,7 +660,7 @@ end
 
 function CrossIgnore:DelIgnore(name)
     local fullName, base, realm = self:NormalizePlayerName(name)
-    if not base or not realm then return end
+    if not base or realm == nil then return end
 
     local removedAny = self:RemoveFromAllAddonLists(base, realm)
 
@@ -650,7 +675,7 @@ function CrossIgnore:DelIgnore(name)
                 C_FriendList.DelIgnore(nameOnList)
                 removedAny = true
                 break
-            elseif StripRealm(nameOnList):lower() == base:lower() then
+            elseif not self.isForever and StripRealm(nameOnList):lower() == base:lower() then
                 C_FriendList.DelIgnore(nameOnList)
                 removedAny = true
                 break
@@ -669,11 +694,11 @@ function CrossIgnore:ProcessPendingRemovals()
         for i = #pendingList, 1, -1 do
             local rem = pendingList[i]
             if rem.addedBy == myChar then
-                local full = MakeKey(rem.name, rem.server)
                 self:RemoveFromAllAddonLists(rem.name, rem.server)
                 for j = 1, C_FriendList.GetNumIgnores() do
                     local nameOnList = C_FriendList.GetIgnoreName(j)
-                    if nameOnList and (nameOnList == full or StripRealm(nameOnList) == rem.name) then
+                    local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
+                    if nameOnList and ((listedName == rem.name and listedRealm == rem.server) or (not self.isForever and StripRealm(nameOnList) == rem.name)) then
                         C_FriendList.DelIgnore(nameOnList)
                         break
                     end
@@ -704,7 +729,9 @@ function CrossIgnore:CreateBlockUnblockButton(root, fullName)
     root:CreateDivider()
     root:CreateTitle("|cFFffd100CrossIgnore|r")
     local isBlocked = self:IsPlayerBlocked(fullName)
-    root:CreateButton(isBlocked and "Unblock Player" or "Block Player", function()
+    local label = isBlocked and "Unblock Player" or "Block Player"
+    if self.isForever then label = label .. ": " .. fullName end
+    root:CreateButton(label, function()
         self:AddOrDelIgnore(fullName)
     end)
 end
@@ -718,15 +745,19 @@ function CrossIgnore:CrossIgnore_LFG_ApplicantMenu(owner, root)
 end
 
 function CrossIgnore:CrossIgnore_UnitMenu(owner, root, contextData)
+    if not contextData or not contextData.unit then return end
     local name, realm = UnitFullName(contextData.unit)
+    if canaccessvalue and not canaccessvalue(name) then return end
     if not name then return end
-    local fullName = self:NormalizePlayerName(name .. (realm and "-" .. realm or ""))
+    local fullName = self:NormalizePlayerName(name .. (not self.isForever and realm and "-" .. realm or ""))
     self:CreateBlockUnblockButton(root, fullName)
 end
 
 function CrossIgnore:CrossIgnore_PlayerNameMenu(owner, root, contextData)
-    if not contextData or not contextData.name then return end
-    local fullName = self:NormalizePlayerName(contextData.name .. (contextData.server and contextData.server ~= "" and "-" .. contextData.server or ""))
+    if not contextData then return end
+    if canaccessvalue and not canaccessvalue(contextData.name) then return end
+    if not contextData.name then return end
+    local fullName = self:NormalizePlayerName(contextData.name .. (not self.isForever and contextData.server and contextData.server ~= "" and "-" .. contextData.server or ""))
     self:CreateBlockUnblockButton(root, fullName)
 end
 
@@ -837,11 +868,11 @@ function CrossIgnore:CheckExpiredIgnores()
             local entry = list[i]
             if entry.expires and entry.expires > 0 and entry.expires <= now then
                 local base, realm = entry.name, entry.server
-                local fullName = MakeKey(base, realm)
                 self:RemoveFromAllAddonLists(base, realm)
                 for j = 1, C_FriendList.GetNumIgnores() do
                     local nameOnList = C_FriendList.GetIgnoreName(j)
-                    if nameOnList and (nameOnList == fullName or StripRealm(nameOnList) == base) then
+                    local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
+                    if nameOnList and ((listedName == base and listedRealm == realm) or (not self.isForever and StripRealm(nameOnList) == base)) then
                         C_FriendList.DelIgnore(nameOnList)
                         break
                     end
@@ -857,7 +888,7 @@ end
 
 function CrossIgnore:IsPlayerBlocked(playerName)
     local _, name, server = self:NormalizePlayerName(playerName)
-    if not name or not server then return false end
+    if not name or server == nil then return false end
     return self:IsPlayerInAnyList(name, server)
 end
 
