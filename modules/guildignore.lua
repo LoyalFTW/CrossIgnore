@@ -120,7 +120,7 @@ function GuildIgnore:ObserveUnit(unit, authoritative)
     if not Readable(exists) or not Readable(isPlayer) or not exists or not isPlayer then return end
     local guild = GetGuildInfo(unit)
     if not Readable(guild) or (not Clean(guild) and not authoritative) then return end
-    local name, realm = UnitName(unit)
+    local name, realm = CrossIgnore:GetUnitPlayerName(unit)
     if not Clean(name) or not Readable(realm) then return end
     self:Remember(not CrossIgnore.isForever and realm and realm ~= "" and name .. "-" .. realm or name, guild or "")
 end
@@ -178,7 +178,7 @@ function GuildIgnore:PurgeChatNow()
                 local argsReadable = Readable(args) and type(args) == "table" and (not canaccesstable or canaccesstable(args))
                 local author = argsReadable and Readable(args[2]) and args[2] or text:match("|Hplayer:([^:|]+)")
                 local guild = author and self:KnownGuild(author)
-                local authorKey, selfKey = PlayerKey(author), PlayerKey(UnitName("player"))
+                local authorKey, selfKey = PlayerKey(author), PlayerKey(CrossIgnore:GetUnitPlayerName("player"))
                 if authorKey and authorKey == selfKey then guild = GetGuildInfo("player") end
                 return guild and self:IsGuildBlocked(guild) or false
             end)
@@ -232,7 +232,7 @@ end
 
 local function FilterChat(_, event, message, sender, _, _, _, _, _, _, _, _, _, guid)
     if not next(Rules()) then return false end
-    local senderKey, selfKey = PlayerKey(sender), PlayerKey(UnitName("player"))
+    local senderKey, selfKey = PlayerKey(sender), PlayerKey(CrossIgnore:GetUnitPlayerName("player"))
     local guild = GuildIgnore:KnownGuild(sender)
     if senderKey and senderKey == selfKey then
         guild = GetGuildInfo("player")

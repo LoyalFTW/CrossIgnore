@@ -52,6 +52,7 @@ local function FormatRealmDisplayName(value)
 end
 
 local function CollectRealmNames(activeAddon)
+  if activeAddon and activeAddon.isForever then return {} end
   local realms, seen = {}, {}
 
   local function addRealm(value)
@@ -161,7 +162,7 @@ function UI:ShowAddPlayerPopup(CrossIgnore)
   popup.surnameBox:SetShown(CrossIgnore.isForever)
   popup.serverLabel:SetShown(not CrossIgnore.isForever)
   popup.realmButton:SetShown(not CrossIgnore.isForever)
-  if popup.RefreshRealmOptions then
+  if not CrossIgnore.isForever and popup.RefreshRealmOptions then
     popup:RefreshRealmOptions()
   end
   if popup.SetSelectedRealm then
@@ -241,7 +242,7 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
   W:AttachPlaceholder(surnameBox, L["FOREVER_LAST_NAME"] or "Last Name")
   surnameLabel:Hide()
   surnameBox:Hide()
-  local defaultRealm = NormalizeRealmToken(GetNormalizedRealmName and GetNormalizedRealmName() or nil) or "Unknown"
+  local defaultRealm = not CrossIgnore.isForever and NormalizeRealmToken(GetNormalizedRealmName and GetNormalizedRealmName() or nil) or "Unknown"
   local realmButton = CreateFrame("Button", nil, popup, "UIPanelButtonTemplate")
   realmButton:SetSize(292, 24)
   realmButton:SetPoint("TOPLEFT", 24, -136)
@@ -313,6 +314,7 @@ local function BuildPopups(CrossIgnore, CrossIgnoreDB)
   end
 
   function popup:RefreshRealmOptions()
+    if CrossIgnore.isForever then return end
     self.defaultRealm = NormalizeRealmToken(GetNormalizedRealmName and GetNormalizedRealmName() or nil) or self.defaultRealm or "Unknown"
     self.realmOptions = CollectRealmNames(self.CrossIgnore or CrossIgnore)
     if #self.realmOptions == 0 then

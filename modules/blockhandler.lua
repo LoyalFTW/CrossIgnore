@@ -92,7 +92,7 @@ local function BlizzardEventFilter(_, event, msg, sender, ...)
 end
 
 local function BlockEventFrameHandler(self, event, ...)
-    local name = UnitName("npc") or UnitName("target") or UnitName("mouseover")
+    local name = CrossIgnore:GetUnitPlayerName("npc") or CrossIgnore:GetUnitPlayerName("target") or CrossIgnore:GetUnitPlayerName("mouseover")
     if name and IsBlockedPlayer(name) then
         CrossIgnore:Print("Blocked " .. event .. " from ignored player: " .. name)
 

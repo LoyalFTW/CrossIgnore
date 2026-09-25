@@ -1,4 +1,4 @@
-## Interface: 16001
+## Interface: 120100, 50504, 38002, 20506, 16001, 11509
 ## Title: Cross|cffff7d0aIgnore
 ## Author: Jay
 ## Version: @project-version@
@@ -24,26 +24,41 @@
 ## Category-ruRU: CrossИгнор
 ## Category-zhCN: Cross忽视
 ## Category-zhTW: Cross忽視
+
+
+## Libraries / Locale
 Libs.xml
 locales/Locales.xml
+
+## Core
 CrossIgnore.lua
+
+## Chat Filter / Logic
 modules/chatfilter.lua
 modules/chatfilterdefaults.lua
 modules/blockhandler.lua
 modules/guildignore.lua
 modules/rightclick.lua
 modules/importexport.lua
+
+## Options
 modules/options.lua
 modules/ignoreoptions.lua
 modules/chatfilteroptions.lua
+
+## NEW MODULAR UI 
 UI/Theme.lua
 UI/Widgets.lua
 UI/Table.lua
+
 Data/Ignore.lua
 Data/Words.lua
 Data/Realms.lua
+
 UI/IgnoreList.lua
 UI/GuildIgnore.lua
 UI/WordFilter.lua
 UI/Core.lua
+
+## UI ENTRY
 UI/Entry.lua
