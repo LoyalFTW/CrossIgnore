@@ -480,6 +480,17 @@ function CrossIgnore:RemoveFromAllAddonLists(base, realm)
     return removed
 end
 
+function CrossIgnore:GetUnitPlayerName(unit)
+    local firstName, secondName = UnitName(unit)
+    if canaccessvalue and (not canaccessvalue(firstName) or not canaccessvalue(secondName)) then return nil end
+    if not firstName or firstName == "" or firstName == "Unknown" then return nil end
+    if self.isForever then
+        if not secondName or secondName == "" then return nil end
+        return firstName .. " " .. secondName
+    end
+    return firstName, secondName
+end
+
 function CrossIgnore:GetBlizzardIgnoreSet()
     local ignoreSet = {}
     local numIgnored = C_FriendList.GetNumIgnores()
