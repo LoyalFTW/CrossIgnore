@@ -51,6 +51,23 @@ local function UpdateChannelDropdown(CrossIgnoreDB)
 end
 
 local function CreateChannelDropdown(parent, CrossIgnoreDB, onChanged)
+  if Menu and MenuUtil then
+    local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+    dropdown:SetSize(185, 25)
+    dropdown:SetDefaultText(L["CHANNEL_ALL"])
+    dropdown:SetupMenu(function(_, rootDescription)
+      for _, channel in ipairs(UpdateChannelDropdown(CrossIgnoreDB)) do
+        rootDescription:CreateRadio(channel, function(value)
+          return (CrossIgnoreDB.selectedChannel or L["CHANNEL_ALL"]) == value
+        end, function(value)
+          CrossIgnoreDB.selectedChannel = value
+          if onChanged then onChanged(value) end
+        end, channel)
+      end
+    end)
+    return dropdown
+  end
+
   local dropdown = CreateFrame("Frame", "CrossIgnoreChannelDropdown", parent, "UIDropDownMenuTemplate")
   UIDropDownMenu_SetWidth(dropdown, 200)
 

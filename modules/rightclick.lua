@@ -1,11 +1,24 @@
 local addonName, addonTable = ...
 local L = addonTable.L
 
-local CrossIgnoreMenuFrame = CreateFrame("Frame", "CrossIgnoreMenuFrame", UIParent, "UIDropDownMenuTemplate")
-CrossIgnoreMenuFrame:SetFrameStrata("TOOLTIP")
-CrossIgnoreMenuFrame:Hide()
+local CrossIgnoreMenuFrame
 
 local function ShowStyledDropdown(items, anchorFrame)
+    if MenuUtil and MenuUtil.CreateContextMenu then
+        MenuUtil.CreateContextMenu(anchorFrame, function(_, rootDescription)
+            for _, item in ipairs(items) do
+                rootDescription:CreateButton(item.text, item.func)
+            end
+        end)
+        return
+    end
+
+    if not CrossIgnoreMenuFrame then
+        CrossIgnoreMenuFrame = CreateFrame("Frame", "CrossIgnoreMenuFrame", UIParent, "UIDropDownMenuTemplate")
+        CrossIgnoreMenuFrame:SetFrameStrata("TOOLTIP")
+        CrossIgnoreMenuFrame:Hide()
+    end
+
     local function initialize(self, level)
         if not level then return end
         for _, item in ipairs(items) do

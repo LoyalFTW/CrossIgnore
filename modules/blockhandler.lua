@@ -67,6 +67,19 @@ local function IsBlockedPlayer(sender)
     return CrossIgnore:IsPlayerBlocked(fullName or sender)
 end
 
+local function IsIgnoredGuildMember(sender)
+    local guildIgnore = CrossIgnore.GuildIgnore
+    if not sender or not guildIgnore then return false end
+    local guild = guildIgnore:KnownGuild(sender)
+    return guild and guildIgnore:IsGuildBlocked(guild) or false
+end
+
+local function GetUnitFullName(unit)
+    local name, realm = CrossIgnore:GetUnitPlayerName(unit)
+    if not name then return nil end
+    return realm and realm ~= "" and name .. "-" .. realm or name
+end
+
 local function ChatEventFilter(_, event, msg, sender, ...)
     if IsBlockedPlayer(sender) then
         return true 
@@ -92,13 +105,21 @@ local function BlizzardEventFilter(_, event, msg, sender, ...)
 end
 
 local function BlockEventFrameHandler(self, event, ...)
-    local name = CrossIgnore:GetUnitPlayerName("npc") or CrossIgnore:GetUnitPlayerName("target") or CrossIgnore:GetUnitPlayerName("mouseover")
-    if name and IsBlockedPlayer(name) then
-        CrossIgnore:Print("Blocked " .. event .. " from ignored player: " .. name)
+    if event == "TRADE_SHOW" and CrossIgnore.GuildIgnore then CrossIgnore.GuildIgnore:ObserveUnit("npc") end
+    local sender = ...
+    local name = event == "TRADE_SHOW" and GetUnitFullName("npc") or sender
+    local blockedPlayer = name and IsBlockedPlayer(name)
+    local blockedGuildMember = name and CrossIgnore.globalDB.global.guildAutoDeclineInvites ~= false and IsIgnoredGuildMember(name)
+    if blockedPlayer or blockedGuildMember then
+        CrossIgnore:Print("Blocked " .. event .. " from: " .. name)
 
         if event == "TRADE_SHOW" then CancelTrade() end
         if event == "DUEL_REQUESTED" then CancelDuel() end
-        if event == "PARTY_INVITE_REQUEST" then DeclineGroup() StaticPopup_Hide("PARTY_INVITE") end
+        if event == "PARTY_INVITE_REQUEST" then
+            DeclineGroup()
+            StaticPopup_Hide("PARTY_INVITE")
+            C_Timer.After(0, function() StaticPopup_Hide("PARTY_INVITE") end)
+        end
     end
 end
 
@@ -123,7 +144,7 @@ local whisperFrame = CreateFrame("Frame")
 whisperFrame:RegisterEvent("CHAT_MSG_WHISPER")
 whisperFrame:RegisterEvent("CHAT_MSG_BN_WHISPER")
 whisperFrame:SetScript("OnEvent", function(_, event, msg, sender, ...)
-    if CrossIgnore.charDB.profile.settings.autoReplyEnabled and IsBlockedPlayer(sender) then
+    if CrossIgnore.charDB.profile.settings.autoReplyEnabled and (IsBlockedPlayer(sender) or IsIgnoredGuildMember(sender)) then
         local replyMsg = CrossIgnore.charDB.profile.settings.autoReplyMessage
 
         if event == "CHAT_MSG_WHISPER" then

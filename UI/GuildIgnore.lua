@@ -62,6 +62,39 @@ function M:Build(panel, addon)
     scroll:SetScrollChild(content)
     self.content = content
 
+    local details = CreateFrame("Frame", nil, UI.Frames.main, "BackdropTemplate")
+    details:SetSize(310, 405)
+    details:SetFrameStrata("DIALOG")
+    details:SetClampedToScreen(true)
+    details:SetBackdrop({ bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border", tile = true, tileSize = 16, edgeSize = 16, insets = { left = 5, right = 5, top = 5, bottom = 5 } })
+    details:Hide()
+    self.details = details
+    self.memberRows = {}
+    self.memberTitle = W:CreateLabel(details, "", "TOPLEFT", 16, -16, "GameFontHighlightLarge")
+    self.memberTitle:SetWidth(250)
+    self.memberTitle:SetJustifyH("LEFT")
+    W:CreateButton(details, "X", "TOPRIGHT", -12, -12, 24, 24, function() details:Hide() end)
+    self.memberCount = W:CreateLabel(details, "", "TOPLEFT", 16, -43, "GameFontHighlightSmall")
+    W:CreateLabel(details, T("GUILD_IGNORE_RETENTION"), "TOPLEFT", 16, -66, "GameFontNormalSmall")
+    self.retentionButtons = {}
+    for i, option in ipairs({ { 1, "GUILD_IGNORE_RETENTION_DAY" }, { 7, "GUILD_IGNORE_RETENTION_WEEK" }, { 30, "GUILD_IGNORE_RETENTION_MONTH" } }) do
+        local days = option[1]
+        self.retentionButtons[days] = W:CreateButton(details, T(option[2]), "TOPLEFT", 14 + (i - 1) * 94, -83, 90, 22, function()
+            if M.selected and addon.GuildIgnore:SetRetentionDays(M.selected, days) then M:RefreshMembers() end
+        end)
+    end
+    self.memberEmpty = W:CreateLabel(details, T("GUILD_IGNORE_MEMBERS_EMPTY"), "TOPLEFT", 18, -137, "GameFontDisable")
+    self.memberEmpty:SetWidth(270)
+    self.memberEmpty:SetJustifyH("LEFT")
+    local memberScroll = CreateFrame("ScrollFrame", nil, details, "UIPanelScrollFrameTemplate")
+    memberScroll:SetPoint("TOPLEFT", 12, -120)
+    memberScroll:SetPoint("BOTTOMRIGHT", -30, 14)
+    local memberContent = CreateFrame("Frame", nil, memberScroll)
+    memberContent:SetSize(265, 270)
+    memberScroll:SetScrollChild(memberContent)
+    self.memberContent = memberContent
+    panel:HookScript("OnHide", function() details:Hide() end)
+
     self.empty = W:CreateLabel(panel, T("GUILD_IGNORE_EMPTY"), "TOPLEFT", 26, -215, "GameFontDisable")
 
     W:CreateButton(panel, T("GUILD_IGNORE_REMOVE"), "TOPLEFT", 15, -347, 145, 24, function()
@@ -71,6 +104,7 @@ function M:Build(panel, addon)
         end
         addon.GuildIgnore:RemoveGuild(M.selected)
         M.selected = nil
+        M.details:Hide()
         M:Refresh()
     end)
 
@@ -90,6 +124,16 @@ function M:Build(panel, addon)
         lookupBox:ClearFocus()
     end)
     lookupBox:SetScript("OnEscapePressed", lookupBox.ClearFocus)
+
+    local inviteCheckbox = CreateFrame("CheckButton", nil, panel, "ChatConfigCheckButtonTemplate")
+    inviteCheckbox:SetPoint("TOPLEFT", 15, -422)
+    inviteCheckbox:SetChecked(addon.globalDB.global.guildAutoDeclineInvites ~= false)
+    inviteCheckbox:SetScript("OnClick", function(button)
+        addon.globalDB.global.guildAutoDeclineInvites = button:GetChecked() and true or false
+    end)
+    local inviteLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    inviteLabel:SetPoint("LEFT", inviteCheckbox, "RIGHT", 4, 0)
+    inviteLabel:SetText(T("GUILD_IGNORE_AUTO_DECLINE"))
 end
 
 function M:Refresh()
@@ -106,11 +150,21 @@ function M:Refresh()
             row:SetPoint("TOPLEFT", 0, -((i - 1) * 22))
             row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             row.text:SetPoint("LEFT", 8, 0)
-            row.text:SetWidth(345)
+            row.text:SetWidth(320)
             row.text:SetJustifyH("LEFT")
+            row.arrow = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            row.arrow:SetPoint("RIGHT", -8, 0)
+            row.arrow:SetText(">")
+            row:SetScript("OnEnter", function(selfRow)
+                selfRow.arrow:SetTextColor(1, 0.82, 0)
+            end)
+            row:SetScript("OnLeave", function(selfRow)
+                selfRow.arrow:SetTextColor(0.9, 0.9, 0.9)
+            end)
             row:SetScript("OnClick", function(selfRow)
                 M.selected = selfRow.guildName
                 M:Refresh()
+                M:ShowMembers()
             end)
             self.rows[i] = row
         end
@@ -121,6 +175,61 @@ function M:Refresh()
     end
     for i = #names + 1, #self.rows do self.rows[i]:Hide() end
     self.content:SetHeight(math.max(145, #names * 22))
+    if self.selected and not self.addon.GuildIgnore:IsGuildBlocked(self.selected) then
+        self.selected = nil
+        self.details:Hide()
+    elseif self.details:IsShown() then
+        self:RefreshMembers()
+    end
+end
+
+function M:ShowMembers()
+    if not self.selected then return end
+    local details = self.details
+    details:ClearAllPoints()
+    local right = UI.Frames.main:GetRight()
+    local screenRight = UIParent:GetRight()
+    if right and screenRight and screenRight - right >= details:GetWidth() + 8 then
+        details:SetPoint("TOPLEFT", UI.Frames.main, "TOPRIGHT", 4, -42)
+    else
+        details:SetPoint("TOPRIGHT", UI.Frames.main, "TOPLEFT", -4, -42)
+    end
+    details:Show()
+    self:RefreshMembers()
+end
+
+function M:RefreshMembers()
+    if not self.selected or not self.details or not self.details:IsShown() then return end
+    local players = self.addon.GuildIgnore:GetKnownPlayersForGuild(self.selected)
+    local retention = self.addon.GuildIgnore:GetRetentionDays(self.selected)
+    self.memberTitle:SetText(self.selected)
+    self.memberCount:SetText(string.format(T("GUILD_IGNORE_MEMBERS_COUNT"), #players))
+    for days, button in pairs(self.retentionButtons) do
+        if days == retention then button:LockHighlight() else button:UnlockHighlight() end
+    end
+    self.memberEmpty:SetShown(#players == 0)
+    for i, player in ipairs(players) do
+        local row = self.memberRows[i]
+        if not row then
+            row = CreateFrame("Frame", nil, self.memberContent)
+            row:SetSize(265, 23)
+            row:SetPoint("TOPLEFT", 0, -((i - 1) * 23))
+            row.name = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            row.name:SetPoint("LEFT", 5, 0)
+            row.name:SetWidth(155)
+            row.name:SetJustifyH("LEFT")
+            row.seen = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            row.seen:SetPoint("RIGHT", -2, 0)
+            row.seen:SetWidth(95)
+            row.seen:SetJustifyH("RIGHT")
+            self.memberRows[i] = row
+        end
+        row.name:SetText(player.name)
+        row.seen:SetText(date("%b %d %H:%M", player.seen))
+        row:Show()
+    end
+    for i = #players + 1, #self.memberRows do self.memberRows[i]:Hide() end
+    self.memberContent:SetHeight(math.max(270, #players * 23))
 end
 
 return M

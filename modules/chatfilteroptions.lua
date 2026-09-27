@@ -46,6 +46,25 @@ function CrossIgnore:CreateChatFilterDebugMenu(parent)
     end
 
     local function CreateChannelDropdown(parent)
+        if Menu and MenuUtil then
+            local dropdown = CreateFrame("DropdownButton", nil, parent, "WowStyle1DropdownTemplate")
+            dropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, -5)
+            dropdown:SetSize(leftPanelWidth - 10, 25)
+            dropdown:SetDefaultText(L["CHANNEL_ALL"])
+            dropdown:SetupMenu(function(_, rootDescription)
+                for _, channel in ipairs(UpdateChannelDropdown()) do
+                    rootDescription:CreateRadio(channel, function(value)
+                        return filterChannel == value
+                    end, function(value)
+                        filterChannel = value
+                        CrossIgnoreDB.selectedChannel = value
+                        refreshLeftPanel()
+                    end, channel)
+                end
+            end)
+            return dropdown
+        end
+
         local dropdown = CreateFrame("Frame", nil, parent, "UIDropDownMenuTemplate")
         dropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", -20, -5)
         UIDropDownMenu_SetWidth(dropdown, leftPanelWidth - 10)

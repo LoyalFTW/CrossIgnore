@@ -3,8 +3,6 @@ local L = addonTable.L
 addonTable.UI = addonTable.UI or {}
 local UI = addonTable.UI
 
-CrossIgnore = CrossIgnore or {}
-
 function CrossIgnore:CreateUI()
   local CrossIgnoreDB = _G.CrossIgnoreDB
   UI:BuildMainFrame(self, CrossIgnoreDB)

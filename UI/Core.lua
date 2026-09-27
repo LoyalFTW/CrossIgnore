@@ -174,8 +174,6 @@ function UI:ShowAddPlayerPopup(CrossIgnore)
 end
 
 local function BuildPopups(CrossIgnore, CrossIgnoreDB)
-  StaticPopupDialogs = StaticPopupDialogs or {}
-
   StaticPopupDialogs["CROSSIGNORE_CONFIRM_REMOVE_ALL_WORDS"] = {
     text = L["REMOVE_ALL_CONFIRM"],
     button1 = L["YES_BUTTON"],

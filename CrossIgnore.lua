@@ -2,9 +2,9 @@ CrossIgnore = LibStub("AceAddon-3.0"):NewAddon("CrossIgnore", "AceConsole-3.0", 
 local addonName, addonTable = ...
 local L = addonTable.L
 
-local currentRealm = GetNormalizedRealmName()
 local interfaceVersion = tonumber((select(4, GetBuildInfo()))) or 0
 CrossIgnore.isForever = interfaceVersion >= 16000 and interfaceVersion < 20000
+local currentRealm = not CrossIgnore.isForever and GetNormalizedRealmName() or nil
 
 local options = {
     name = "CrossIgnore",
@@ -52,6 +52,8 @@ function CrossIgnore:InitDB()
             pendingRemovals = {},
             guildIgnores = {},
             guildKnowledge = {},
+            guildRetention = {},
+            guildAutoDeclineInvites = true,
             filters = {
                 words = {
                     ["All Channels"] = {},
@@ -112,6 +114,7 @@ function CrossIgnore:OnInitialize()
 
     self:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED", "OnLFGDecline")
     self:RegisterEvent("IGNORELIST_UPDATE", "DelayedUpdateIgnoreList")
+    if self.isForever then self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin") end
 
     if LFGListFrame and LFGListFrame.SearchPanel then
         LFGListFrame:HookScript("OnHide", function()
@@ -170,6 +173,10 @@ function CrossIgnore:OnEnable()
     self:ProcessPendingRemovals()
 end
 
+function CrossIgnore:OnPlayerLogin()
+    self:ProcessPendingRemovals()
+end
+
 local function StripRealm(name) return (name and name:match("^[^%-]+")) or name end
 local function MakeKey(base, realm) if not base or realm == nil then return nil end return realm ~= "" and (base .. "-" .. realm) or base end
 local function ToSafeString(value)
@@ -195,6 +202,10 @@ local function NormalizeRealmToken(value)
 end
 
 function CrossIgnore:RefreshKnownRealms()
+    if self.isForever then
+        self.knownRealms = {}
+        return self.knownRealms
+    end
     local realms, seen = {}, {}
 
     local function addRealm(value)
@@ -491,6 +502,14 @@ function CrossIgnore:GetUnitPlayerName(unit)
     return firstName, secondName
 end
 
+function CrossIgnore:GetCurrentCharacterKey()
+    local name = self:GetUnitPlayerName("player")
+    if not name then return nil end
+    if self.isForever then return name end
+    local realm = GetNormalizedRealmName()
+    return realm and name .. "-" .. realm or nil
+end
+
 function CrossIgnore:GetBlizzardIgnoreSet()
     local ignoreSet = {}
     local numIgnored = C_FriendList.GetNumIgnores()
@@ -584,21 +603,12 @@ function CrossIgnore:UpdateIgnoreList()
                 type     = "player",
                 note     = existingNote,
                 expires  = existingExpires,
-                addedBy  = UnitName("player") .. "-" .. GetNormalizedRealmName(),
+                addedBy  = self:GetCurrentCharacterKey(),
             }
 
             table.insert(list, entry)
 
             self:EnsureGlobalPresence(entry, self.charDB.profile.settings.maxIgnoreLimit or 50)
-        end
-    end
-
-    for i = #list, 1, -1 do
-        local p = list[i]
-        local full = MakeKey(p.name, p.server)
-        if not blizzSet[full] then
-            table.remove(list, i)
-            self:RemoveFromAllAddonLists(p.name, p.server)
         end
     end
 
@@ -610,6 +620,7 @@ end
 function CrossIgnore:AddIgnore(name, note, duration)
     local fullName, base, realm = self:NormalizePlayerName(name)
     if not base or realm == nil then
+        if self.isForever then return end
         realm = GetNormalizedRealmName()
         if not base or realm == nil then return end
     end
@@ -637,7 +648,7 @@ function CrossIgnore:AddIgnore(name, note, duration)
         type       = "player",
         note       = note or "",
         expires    = expiresAt,
-        addedBy    = UnitName("player") .. "-" .. GetNormalizedRealmName(),
+        addedBy    = self:GetCurrentCharacterKey(),
     }
 
     if #self.charDB.profile.players < maxIgnoreLimit then
@@ -660,7 +671,8 @@ end
 
 
 function CrossIgnore:maybeMarkPendingRemoval(base, realm, addedBy)
-    local myChar = UnitName("player") .. "-" .. GetNormalizedRealmName()
+    local myChar = self:GetCurrentCharacterKey()
+    if not myChar then return false end
     if addedBy and addedBy ~= myChar then
         local t = self.charDB.profile.settings.useGlobalIgnore and self.globalDB.global.pendingRemovals or self.charDB.profile.pendingRemovals
         table.insert(t, { name = base, server = realm, addedBy = addedBy, markedBy = myChar, markedAt = time() })
@@ -674,9 +686,6 @@ function CrossIgnore:DelIgnore(name)
     if not base or realm == nil then return end
 
     local removedAny = self:RemoveFromAllAddonLists(base, realm)
-
-    local myChar = UnitName("player") .. "-" .. GetNormalizedRealmName()
-    local addedBySameChar = true 
 
     for i = 1, C_FriendList.GetNumIgnores() do
         local nameOnList = C_FriendList.GetIgnoreName(i)
@@ -700,7 +709,8 @@ function CrossIgnore:DelIgnore(name)
 end
 
 function CrossIgnore:ProcessPendingRemovals()
-    local myChar = UnitName("player") .. "-" .. GetNormalizedRealmName()
+    local myChar = self:GetCurrentCharacterKey()
+    if not myChar then return end
     local function processList(pendingList)
         for i = #pendingList, 1, -1 do
             local rem = pendingList[i]
@@ -757,8 +767,7 @@ end
 
 function CrossIgnore:CrossIgnore_UnitMenu(owner, root, contextData)
     if not contextData or not contextData.unit then return end
-    local name, realm = UnitFullName(contextData.unit)
-    if canaccessvalue and not canaccessvalue(name) then return end
+    local name, realm = self:GetUnitPlayerName(contextData.unit)
     if not name then return end
     local fullName = self:NormalizePlayerName(name .. (not self.isForever and realm and "-" .. realm or ""))
     self:CreateBlockUnblockButton(root, fullName)
@@ -770,6 +779,106 @@ function CrossIgnore:CrossIgnore_PlayerNameMenu(owner, root, contextData)
     if not contextData.name then return end
     local fullName = self:NormalizePlayerName(contextData.name .. (not self.isForever and contextData.server and contextData.server ~= "" and "-" .. contextData.server or ""))
     self:CreateBlockUnblockButton(root, fullName)
+end
+
+function CrossIgnore:ShowUnitMenuButton(tag, contextData)
+    local unitMenus = { MENU_UNIT_ENEMY_PLAYER = true, MENU_UNIT_PLAYER = true, MENU_UNIT_PARTY = true, MENU_UNIT_RAID_PLAYER = true }
+    local nameMenus = { MENU_UNIT_FRIEND = true, MENU_UNIT_FRIEND_OFFLINE = true, MENU_UNIT_CHAT_ROSTER = true }
+    local frame = self.unitMenuButtonFrame
+    if frame then frame:Hide() end
+    if not contextData or not (nameMenus[tag] or (unitMenus[tag] and self.db.profile.settings.UnitBlock)) then return end
+
+    local name
+    local unit = ToSafeString(contextData.unit)
+    if unit then
+        name = self:GetUnitPlayerName(unit)
+    else
+        name = ToSafeString(contextData.name)
+        local server = ToSafeString(contextData.server)
+        if name and not self.isForever and server and server ~= "" then
+            name = name .. "-" .. server
+        end
+    end
+    local fullName = name and self:NormalizePlayerName(name)
+    if not fullName then return end
+    local manager = Menu.GetManager()
+    local menu = manager and manager:GetOpenMenu()
+    if not menu or not menu:IsShown() then return end
+
+    if not frame then
+        frame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+        frame:SetSize(180, 48)
+        frame:SetClampedToScreen(true)
+        frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 8, insets = { left = 2, right = 2, top = 2, bottom = 2 } })
+        frame:SetBackdropColor(0, 0, 0, 0.95)
+        frame:SetBackdropBorderColor(0.65, 0.55, 0.3, 1)
+        local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        title:SetPoint("TOPLEFT", 8, -7)
+        title:SetText("CrossIgnore")
+        frame.title = title
+        frame.button = CreateFrame("Button", nil, frame)
+        frame.button:SetPoint("TOPLEFT", 4, -24)
+        frame.button:SetPoint("BOTTOMRIGHT", -4, 4)
+        frame.button:SetNormalFontObject("GameFontHighlight")
+        local label = frame.button:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        label:SetPoint("LEFT", 4, 0)
+        label:SetPoint("RIGHT", -4, 0)
+        label:SetJustifyH("LEFT")
+        frame.button:SetFontString(label)
+        frame.label = label
+        local highlight = frame.button:CreateTexture(nil, "HIGHLIGHT")
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(1, 0.82, 0, 0.2)
+        frame.button:SetHighlightTexture(highlight)
+        frame.button.HandlesGlobalMouseEvent = function(_, buttonName, event)
+            return buttonName == "LeftButton" and event == "GLOBAL_MOUSE_DOWN"
+        end
+        frame.button:SetScript("OnClick", function()
+            local selectedName = frame.fullName
+            frame:Hide()
+            Menu.GetManager():CloseMenus()
+            if selectedName then self:AddOrDelIgnore(selectedName) end
+        end)
+        frame:SetScript("OnUpdate", function()
+            if not frame.menu or not frame.menu:IsShown() or Menu.GetManager():GetOpenMenu() ~= frame.menu then frame:Hide() end
+        end)
+        self.unitMenuButtonFrame = frame
+    end
+
+    frame.menu = menu
+    frame.fullName = fullName
+    local function FindMenuFont(region)
+        for _, childRegion in ipairs({ region:GetRegions() }) do
+            if childRegion:IsObjectType("FontString") and ToSafeString(childRegion:GetText()) then
+                local font, size, flags = childRegion:GetFont()
+                if font and size then return font, size, flags end
+            end
+        end
+        for _, child in ipairs({ region:GetChildren() }) do
+            local font, size, flags = FindMenuFont(child)
+            if font then return font, size, flags end
+        end
+    end
+    local font, size, flags = FindMenuFont(menu)
+    if font then
+        frame.title:SetFont(font, size, flags)
+        frame.label:SetFont(font, size, flags)
+    end
+    frame.button:SetText(self:IsPlayerBlocked(fullName) and "UnblockPlayer" or "BlockPlayer")
+    frame:SetScale(menu:GetEffectiveScale() / UIParent:GetEffectiveScale())
+    frame:SetWidth(menu:GetWidth())
+    frame:SetFrameStrata(menu:GetFrameStrata())
+    frame:SetFrameLevel(menu:GetFrameLevel() + 1)
+    frame:ClearAllPoints()
+    local bottom = menu:GetBottom()
+    if bottom and bottom < frame:GetHeight() + 2 then
+        local point, relativeTo, relativePoint, x, y = menu:GetPoint(1)
+        if point then
+            menu:SetPoint(point, relativeTo, relativePoint, x, y + frame:GetHeight() + 2 - bottom)
+        end
+    end
+    frame:SetPoint("TOPLEFT", menu, "BOTTOMLEFT", 0, 0)
+    frame:Show()
 end
 
 function CrossIgnore:ClearLFGCache()
@@ -804,6 +913,11 @@ function CrossIgnore:ShowBlockedIconOnTooltip()
 end
 
 function CrossIgnore:HookFunctions()
+    if EventRegistry and Menu and Menu.GetManager then
+        EventRegistry:RegisterCallback("Menu.OpenMenuTag", function(_, tag, contextData)
+            self:ShowUnitMenuButton(tag, contextData)
+        end, self)
+    end
     if Menu and Menu.ModifyMenu then
         if LFGListFrame then
             Menu.ModifyMenu("MENU_LFG_FRAME_SEARCH_ENTRY", function(...)
@@ -846,19 +960,6 @@ function CrossIgnore:HookFunctions()
             end)
         end
 
-        if self.db.profile.settings.UnitBlock then
-            for _, menu in pairs({"MENU_UNIT_ENEMY_PLAYER", "MENU_UNIT_PLAYER", "MENU_UNIT_PARTY", "MENU_UNIT_RAID_PLAYER"}) do
-                Menu.ModifyMenu(menu, function(...)
-                    self:CrossIgnore_UnitMenu(...)
-                end)
-            end
-        end
-
-        for _, menu in ipairs({"MENU_UNIT_FRIEND", "MENU_UNIT_FRIEND_OFFLINE", "MENU_UNIT_CHAT_ROSTER"}) do
-            Menu.ModifyMenu(menu, function(...)
-                self:CrossIgnore_PlayerNameMenu(...)
-            end)
-        end
     end
 end
 
