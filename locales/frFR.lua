@@ -85,6 +85,10 @@ addonTable.Locales.frFR = {
 
     CI_OPTIONS = "Options CrossIgnore",
     LFG_AUTO_BLOCK = "Activer le blocage automatique LFG",
+    LFG_EXPIRE_LABEL = "Expiration LFG (jours, 0 = jamais) :",
+    LFG_EXPIRE_SET = "Expiration des blocages LFG définie sur %s",
+    LFG_DECLINE_REASON = "Candidature LFG refusée",
+    LFG_UNAVAILABLE_FOREVER = "Le blocage automatique des refus LFG est indisponible dans le navigateur de groupes de Forever.",
     AUTOMATICALLY_BLOCK_LEADER_OF_THE_GROUP = "Bloque automatiquement le chef de groupe qui vous a refusé.",
     EDIT_NOTE = "Modifier la note",
     SET_EXPIRY = "Définir l’expiration",

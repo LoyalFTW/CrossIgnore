@@ -102,6 +102,10 @@ addonTable.Locales.enUS = {
 
     CI_OPTIONS = "CrossIgnore Options",
     LFG_AUTO_BLOCK = "Enable LFG Auto Block",
+    LFG_EXPIRE_LABEL = "LFG expiry (days, 0 = never):",
+    LFG_EXPIRE_SET = "LFG ignore expiration set to %s",
+    LFG_DECLINE_REASON = "LFG application declined",
+    LFG_UNAVAILABLE_FOREVER = "LFG decline auto-block is unavailable in Forever's group browser.",
     AUTOMATICALLY_BLOCK_LEADER_OF_THE_GROUP = "This will automatically block the leader of the group who declined you.",
     EDIT_NOTE = "Edit Note",
     SET_EXPIRY = "Set Expiry",

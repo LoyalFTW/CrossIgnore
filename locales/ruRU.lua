@@ -85,6 +85,10 @@ addonTable.Locales.ruRU = {
 
     CI_OPTIONS = "Настройки CrossIgnore",
     LFG_AUTO_BLOCK = "Включить автоматическую блокировку в LFG",
+    LFG_EXPIRE_LABEL = "Срок LFG (дней, 0 = никогда):",
+    LFG_EXPIRE_SET = "Срок блокировки LFG установлен на %s",
+    LFG_DECLINE_REASON = "Заявка LFG отклонена",
+    LFG_UNAVAILABLE_FOREVER = "Автоблокировка за отклонение заявки недоступна в поиске групп Forever.",
     AUTOMATICALLY_BLOCK_LEADER_OF_THE_GROUP = "Автоматически заблокирует лидера группы, который Вас отклонил",
     EDIT_NOTE = "Редактировать заметку",
     SET_EXPIRY = "Установить срок действия",

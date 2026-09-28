@@ -77,7 +77,8 @@ function CrossIgnore:InitDB()
     self.charDB = LibStub("AceDB-3.0"):New("CrossIgnoreSingleDB", {
         profile = {
             settings = {
-                LFGBlock = true,
+                LFGBlock = not self.isForever,
+                lfgExpireDays = 1,
                 UnitBlock = true,
                 useGlobalIgnore = false,
                 maxIgnoreLimit = 50,
@@ -112,7 +113,9 @@ function CrossIgnore:OnInitialize()
 
     LibStub("AceConfig-3.0"):RegisterOptionsTable("CrossIgnore", options, {"CrossIgnore", "ci"})
 
-    self:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED", "OnLFGDecline")
+    if not self.isForever then
+        self:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED", "OnLFGDecline")
+    end
     self:RegisterEvent("IGNORELIST_UPDATE", "DelayedUpdateIgnoreList")
     if self.isForever then self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin") end
 
@@ -964,10 +967,11 @@ function CrossIgnore:HookFunctions()
 end
 
 function CrossIgnore:OnLFGDecline(event, id, status)
-    if self.db.profile.settings.LFGBlock and status == "declined" then
+    if not self.isForever and C_LFGList and C_LFGList.GetSearchResultInfo and self.db.profile.settings.LFGBlock and status == "declined" then
         local info = C_LFGList.GetSearchResultInfo(id)
         if info and info.leaderName then
-            self:AddIgnore(info.leaderName)
+            local days = math.max(0, tonumber(self.db.profile.settings.lfgExpireDays) or 1)
+            self:AddIgnore(info.leaderName, L["LFG_DECLINE_REASON"], days * 86400)
         end
     end
 end
@@ -1004,11 +1008,4 @@ function CrossIgnore:IsPlayerBlocked(playerName)
     return self:IsPlayerInAnyList(name, server)
 end
 
-function CrossIgnore:OnLFGDecline(event, id, status)
-    if self.db.profile.settings.LFGBlock and status == "declined" then
-        local info = C_LFGList.GetSearchResultInfo(id)
-        if info and info.leaderName then
-            self:AddIgnore(info.leaderName)
-        end
-    end
-end
+
