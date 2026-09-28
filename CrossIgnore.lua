@@ -55,6 +55,7 @@ function CrossIgnore:InitDB()
             guildRetention = {},
             guildAutoDeclineInvites = true,
             filters = {
+                totalFilteredMessages = 0,
                 words = {
                     ["All Channels"] = {},
                     ["Say"] = {},

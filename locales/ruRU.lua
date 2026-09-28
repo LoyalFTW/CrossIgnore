@@ -26,6 +26,8 @@ addonTable.Locales.ruRU = {
     EXPIRES_HEADER       = "Истекает",
 
     BANNED_WORDS_HEADER2 = "Запрещенные слова",
+    FILTERED_MESSAGES_SESSION = "За сеанс отфильтровано: %d",
+    FILTERED_MESSAGES_TOTAL = "Всего отфильтровано: %d",
     CHAT_TYPE_HEADER     = "Тип чата",
     STRICT_BAN_HEADER    = "Строгий запрет",
     CHANNEL_SERVICES     = "торговля (услуги): город",

@@ -26,6 +26,8 @@ addonTable.Locales.frFR = {
     EXPIRES_HEADER       = "Expire",
 
     BANNED_WORDS_HEADER2 = "Mots interdits",
+    FILTERED_MESSAGES_SESSION = "Filtrés cette session : %d",
+    FILTERED_MESSAGES_TOTAL = "Filtrés au total : %d",
     CHAT_TYPE_HEADER     = "Type de chat",
     STRICT_BAN_HEADER    = "Blocage strict",
     CHANNEL_SERVICES     = "commerce (services) - cité",

@@ -69,7 +69,7 @@ local function CreateChannelDropdown(parent, CrossIgnoreDB, onChanged)
   end
 
   local dropdown = CreateFrame("Frame", "CrossIgnoreChannelDropdown", parent, "UIDropDownMenuTemplate")
-  UIDropDownMenu_SetWidth(dropdown, 200)
+  UIDropDownMenu_SetWidth(dropdown, 185)
 
   local function OnClick(self)
     CrossIgnoreDB.selectedChannel = self.value
@@ -145,7 +145,7 @@ function M:Build(panel, CrossIgnore, CrossIgnoreDB)
   self.table = TableWidget:New(panel, {
     columns = columns,
     width = 410,
-    height = 320 + Theme.header.height,
+    height = 280 + Theme.header.height,
     defaultSortKey = "word",
     defaultSortAsc = true,
   })
@@ -164,7 +164,7 @@ function M:Build(panel, CrossIgnore, CrossIgnoreDB)
     end
   end)
 
-  local newWordInput = W:CreateEditBox(self.table.scrollFrame, 200, 24, "BOTTOMLEFT", 5, -35)
+  local newWordInput = W:CreateEditBox(panel, 200, 24, "TOPLEFT", 15, -365)
   W:AttachPlaceholder(newWordInput, L["SEARCH_PLACEHOLDERINPUT"])
   newWordInput:SetScript("OnEnterPressed", function(selfBox)
     self:AddNewWord(newWordInput)
@@ -174,21 +174,38 @@ function M:Build(panel, CrossIgnore, CrossIgnoreDB)
   local dropdown = CreateChannelDropdown(panel, CrossIgnoreDB, function()
     CrossIgnore:UpdateWordsList(UI.State.wordFilterText or "")
   end)
-  dropdown:SetPoint("TOPLEFT", newWordInput, "TOPRIGHT", -10, 0)
+  if Menu and MenuUtil then
+    dropdown:SetPoint("LEFT", newWordInput, "RIGHT", 16, 0)
+  else
+    dropdown:SetPoint("TOPLEFT", newWordInput, "TOPRIGHT", 0, 3)
+  end
 
-  local addBtn = W:CreateButton(newWordInput, L["ADD_WORD_BTN"], "BOTTOMLEFT", -5, -30, 90, 24, function()
+  local addBtn = W:CreateButton(panel, L["ADD_WORD_BTN"], "TOPLEFT", 10, -401, 100, 26, function()
     self:AddNewWord(newWordInput)
   end)
-  local removeBtn = W:CreateButton(newWordInput, L["REMOVE_WORD_BTN"], "BOTTOMLEFT", 85, -30, 90, 24, function()
+  local removeBtn = W:CreateButton(panel, L["REMOVE_WORD_BTN"], "TOPLEFT", 122, -401, 110, 26, function()
     self:RemoveSelectedWord()
   end)
-  local removeAllBtn = W:CreateButton(newWordInput, L["REMOVE_ALL_BTN"], "BOTTOMLEFT", 170, -30, 90, 24, function()
+  local removeAllBtn = W:CreateButton(panel, L["REMOVE_ALL_BTN"], "TOPLEFT", 244, -401, 100, 26, function()
     StaticPopup_Show("CROSSIGNORE_CONFIRM_REMOVE_ALL_WORDS")
   end)
 
   UI.Frames.wordSearchBox = searchBox
   UI.Frames.newWordInput = newWordInput
   UI.Frames.channelDropdown = dropdown
+  self.sessionCountLabel = W:CreateLabel(panel, "", "BOTTOMLEFT", 15, 12, "GameFontHighlightSmall")
+  self.totalCountLabel = W:CreateLabel(panel, "", "BOTTOMLEFT", 235, 12, "GameFontHighlightSmall")
+  CrossIgnore.ChatFilter.OnFilteredMessageCountChanged = function()
+    self:RefreshFilteredCount()
+  end
+  self:RefreshFilteredCount()
+end
+
+function M:RefreshFilteredCount()
+  if not self.sessionCountLabel then return end
+  local session, total = self.CrossIgnore.ChatFilter:GetFilteredMessageCounts()
+  self.sessionCountLabel:SetText(string.format(L["FILTERED_MESSAGES_SESSION"], session))
+  self.totalCountLabel:SetText(string.format(L["FILTERED_MESSAGES_TOTAL"], total))
 end
 
 function M:AddNewWord(newWordInput)
@@ -233,6 +250,7 @@ function M:Refresh(searchText)
   local CrossIgnoreDB = self.CrossIgnoreDB
   local CrossIgnore = self.CrossIgnore
   if not self.table then return end
+  self:RefreshFilteredCount()
 
   local list = Data.BuildWordList(CrossIgnoreDB)
   list = Data.FilterWords(list, searchText or UI.State.wordFilterText or "")

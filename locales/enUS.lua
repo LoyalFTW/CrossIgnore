@@ -30,6 +30,8 @@ addonTable.Locales.enUS = {
     EXPIRES_HEADER       = "Expires",
 
     BANNED_WORDS_HEADER2 = "Banned Words",
+    FILTERED_MESSAGES_SESSION = "Filtered this session: %d",
+    FILTERED_MESSAGES_TOTAL = "Filtered all time: %d",
     CHAT_TYPE_HEADER     = "Chat Type",
     STRICT_BAN_HEADER    = "Strict Ban",
     CHANNEL_SERVICES     = "trade (services) - city",

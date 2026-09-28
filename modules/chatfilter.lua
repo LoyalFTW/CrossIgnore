@@ -274,6 +274,52 @@ end
 
 local MAX_LOG_ENTRIES = 500
 local logIndex = 1
+local sessionFilteredMessages = 0
+local countedMessages = {}
+local countedMessageOrder = {}
+local countedMessageIndex = 1
+local lastUnidentifiedMessage
+
+function ChatFilter:GetFilteredMessageCounts()
+    local filters = CrossIgnoreDB and CrossIgnoreDB.global and CrossIgnoreDB.global.filters
+    return sessionFilteredMessages, filters and filters.totalFilteredMessages or 0
+end
+
+local function CountFilteredMessage(chatFrame, event, msg, sender, lineID, channel)
+    if not CrossIgnoreDB then return end
+
+    if (type(lineID) == "number" and lineID > 0) or (type(lineID) == "string" and lineID ~= "") then
+        local key = event .. ":" .. tostring(lineID)
+        if countedMessages[key] then return end
+        local previousKey = countedMessageOrder[countedMessageIndex]
+        if previousKey then countedMessages[previousKey] = nil end
+        countedMessages[key] = true
+        countedMessageOrder[countedMessageIndex] = key
+        countedMessageIndex = countedMessageIndex % MAX_LOG_ENTRIES + 1
+    else
+        local now = GetTime()
+        local previous = lastUnidentifiedMessage
+        local frameKey = chatFrame or ChatFilter
+        if previous and previous.time == now and previous.event == event
+            and previous.message == msg and previous.sender == sender and previous.channel == channel
+            and not previous.frames[frameKey] then
+            previous.frames[frameKey] = true
+            return
+        end
+        lastUnidentifiedMessage = {
+            time = now, event = event, message = msg, sender = sender, channel = channel,
+            frames = { [frameKey] = true },
+        }
+    end
+
+    ChatFilter:GetFilters()
+    local filters = CrossIgnoreDB.global.filters
+    filters.totalFilteredMessages = (filters.totalFilteredMessages or 0) + 1
+    sessionFilteredMessages = sessionFilteredMessages + 1
+    if ChatFilter.OnFilteredMessageCountChanged then
+        ChatFilter.OnFilteredMessageCountChanged()
+    end
+end
 
 local function AddLog(entry)
     CrossIgnore.ChatFilter.blockedMessages = CrossIgnore.ChatFilter.blockedMessages or {}
@@ -376,7 +422,7 @@ function ChatFilter:ClearLog()
     end
 end
 
-local function ChatEventFilter(_, event, msg, sender, ...)
+local function ChatEventFilter(chatFrame, event, msg, sender, ...)
     local blocked, matchedWord, isStrict, matchedKey = false, nil, false, nil
 
     local keysToCheck = { "all channels" }
@@ -397,6 +443,7 @@ local function ChatEventFilter(_, event, msg, sender, ...)
     end
 
     if blocked then
+        CountFilteredMessage(chatFrame, event, msg, sender, select(9, ...), channelKey)
         local now = time()
         local entry = {
             message   = msg,
