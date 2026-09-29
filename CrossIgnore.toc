@@ -28,38 +28,54 @@
 
 ## Libraries / Locale
 Libs.xml
-locales/Locales.xml
+Locales/Locales.xml
 
 ## Core
 CrossIgnore.lua
+Core/Database.lua
+Core/Settings.lua
+Core/Players.lua
+Core/Hooks.lua
 
 ## Chat Filter / Logic
-modules/chatfilter.lua
-modules/chatfilterdefaults.lua
-modules/blockhandler.lua
-modules/guildignore.lua
-modules/rightclick.lua
-modules/importexport.lua
+Modules/IgnoreStore.lua
+Modules/IgnoreSync.lua
+Modules/Ignore.lua
+Modules/LFG.lua
+Modules/ChatFilter.lua
+Modules/ChatFilterDefaults.lua
+Modules/BlockHandler.lua
+Modules/GuildIgnore.lua
+Modules/ImportExport.lua
 
 ## Options
-modules/options.lua
-modules/ignoreoptions.lua
-modules/chatfilteroptions.lua
+UI/Config/General.lua
+UI/Config/Ignore.lua
+UI/Config/ChatFilter.lua
+UI/Config/ImportExport.lua
 
 ## NEW MODULAR UI 
+UI/Foundation.lua
 UI/Theme.lua
-UI/Widgets.lua
-UI/Table.lua
+UI/Components/Widgets.lua
+UI/Components/Table.lua
 
 Data/Ignore.lua
 Data/Words.lua
 Data/Realms.lua
 
-UI/IgnoreList.lua
-UI/GuildIgnore.lua
-UI/WordFilter.lua
-UI/Core.lua
+UI/Panels/IgnoreList.lua
+UI/Panels/GuildIgnore.lua
+UI/Panels/WordFilter.lua
+UI/AddPlayerPopup.lua
+UI/Navigation.lua
+UI/MainFrame.lua
 
 ## UI ENTRY
+UI/ContextMenus.lua
+UI/UnitMenus.lua
+UI/Tooltips.lua
 UI/Entry.lua
+UI/MinimapButton.lua
+Core/Lifecycle.lua
 

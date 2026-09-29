@@ -1,9 +1,10 @@
-local addonName, addonTable = ...
-local L = addonTable.L
+local _, ns = ...
+local CrossIgnore = ns.Addon
+local L = ns.L
 
 function CrossIgnore:LoadDefaultBlockedWords()
     local filters = self.ChatFilter:GetFilters()
-    local L = addonTable.L  
+    local L = ns.L
 
     local oldKey, newKey = L.OLD_CHANNEL_SERVICES, L.CHANNEL_SERVICES
 
@@ -32,7 +33,7 @@ function CrossIgnore:LoadDefaultBlockedWords()
                 })
             end
         end
-        filters[oldKey] = nil 
+        filters[oldKey] = nil
     end
 
     if not filters.defaultsLoaded and not filters.removedDefaults then

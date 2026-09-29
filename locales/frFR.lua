@@ -1,7 +1,7 @@
-local addonName, addonTable = ...
-addonTable.Locales = addonTable.Locales or {}
+local _, ns = ...
+ns.Locales = ns.Locales or {}
 
-addonTable.Locales.frFR = {
+ns.Locales.frFR = {
 
     TIME_HEADER          = "Maintenant",
     TIME_HEADER2         = "Jamais",
@@ -11,13 +11,13 @@ addonTable.Locales.frFR = {
     NA_TEXT              = "N/D",
     CLOSE_BUTTON         = "Fermer",
     SEARCH_PLACEHOLDER   = "Recherche...",
-	SEARCH_PLACEHOLDERINPUT   = "Ajouter un mot...",
+    SEARCH_PLACEHOLDERINPUT   = "Ajouter un mot...",
     TOTAL_BLOCKED        = "Joueurs bloqués au total : %d",
     NO_PLAYER_SELECTED   = "Aucun joueur valide sélectionné.",
     CONTEXT_NOT_LOADED   = "Le menu contextuel CrossIgnore n'est pas chargé.",
     WORD_CONTEXT_NOT_LOADED = "Le menu contextuel des mots CrossIgnore n'est pas chargé.",
-	REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
-	REMOVE_ALL_BTN = "Remove All",
+    REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
+    REMOVE_ALL_BTN = "Remove All",
 
     PLAYER_NAME_HEADER   = "Nom du joueur",
     SERVER_HEADER        = "Serveur",

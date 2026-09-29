@@ -1,7 +1,7 @@
-local addonName, addonTable = ...
-addonTable.Locales = addonTable.Locales or {}
+local _, ns = ...
+ns.Locales = ns.Locales or {}
 
-addonTable.Locales.enUS = {
+ns.Locales.enUS = {
 
     TIME_HEADER          = "Now",
     TIME_HEADER2         = "Never",
@@ -11,14 +11,13 @@ addonTable.Locales.enUS = {
     NA_TEXT              = "N/A",
     CLOSE_BUTTON         = "Close",
     SEARCH_PLACEHOLDER   = "Search...",
-	SEARCH_PLACEHOLDERINPUT   = "Add Word...",
+    SEARCH_PLACEHOLDERINPUT   = "Add Word...",
     TOTAL_BLOCKED        = "Total Blocked Players: %d",
     NO_PLAYER_SELECTED   = "No valid player selected.",
     CONTEXT_NOT_LOADED   = "CrossIgnore context menu not loaded.",
     WORD_CONTEXT_NOT_LOADED = "CrossIgnore word context menu not loaded.",
-	REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
-	REMOVE_ALL_BTN = "Remove All",
-
+    REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
+    REMOVE_ALL_BTN = "Remove All",
 
     PLAYER_NAME_HEADER   = "Player Name",
     FOREVER_FIRST_NAME   = "First Name",

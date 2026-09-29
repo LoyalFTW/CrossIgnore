@@ -1,7 +1,7 @@
-local addonName, addonTable = ...
-addonTable.Locales = addonTable.Locales or {}
+local _, ns = ...
+ns.Locales = ns.Locales or {}
 
-addonTable.Locales.ruRU = {
+ns.Locales.ruRU = {
 
     TIME_HEADER          = "Сейчас",
     TIME_HEADER2         = "Никогда",
@@ -11,13 +11,13 @@ addonTable.Locales.ruRU = {
     NA_TEXT              = "Н/Д",
     CLOSE_BUTTON         = "Закрыть",
     SEARCH_PLACEHOLDER   = "Поиск...",
-	SEARCH_PLACEHOLDERINPUT   = "Добавить слово...",
+    SEARCH_PLACEHOLDERINPUT   = "Добавить слово...",
     TOTAL_BLOCKED        = "Всего заблокированных игроков: %d",
     NO_PLAYER_SELECTED   = "Не выбран подходящий игрок.",
     CONTEXT_NOT_LOADED   = "Контекстное меню CrossIgnore не загружено.",
     WORD_CONTEXT_NOT_LOADED = "Слова контекстного меню CrossIgnore не загружены.",
-	REMOVE_ALL_PLAYERS_CONFIRM = "Вы уверены, что хотите удалить ВСЕХ игнорируемых игроков?\n\nЭто действие нельзя отменить.",
-	REMOVE_ALL_BTN = "Удалить все",
+    REMOVE_ALL_PLAYERS_CONFIRM = "Вы уверены, что хотите удалить ВСЕХ игнорируемых игроков?\n\nЭто действие нельзя отменить.",
+    REMOVE_ALL_BTN = "Удалить все",
 
     PLAYER_NAME_HEADER   = "Имя игрока",
     SERVER_HEADER        = "Сервер",

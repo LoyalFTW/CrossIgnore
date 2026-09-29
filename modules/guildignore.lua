@@ -1,4 +1,5 @@
-local _, addonTable = ...
+local _, ns = ...
+local CrossIgnore = ns.Addon
 local GuildIgnore = {}
 CrossIgnore.GuildIgnore = GuildIgnore
 
@@ -162,7 +163,7 @@ function GuildIgnore:Remember(name, guild)
     if (not previous or previous.guild ~= guild) and self:IsGuildBlocked(guild) then
         self:PurgeChat()
     end
-    local guildUI = addonTable.UI and addonTable.UI.GuildIgnore
+    local guildUI = ns.UI and ns.UI.GuildIgnore
     if guildUI and guildUI.selected and guildUI.panel and guildUI.panel:IsShown()
         and ((previous and previous.guild and previous.guild:lower() == guildUI.selected:lower()) or guild:lower() == guildUI.selected:lower()) then
         guildUI:RefreshMembers()

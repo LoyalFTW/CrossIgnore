@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossIgnore = ns.Addon
+
 local ChatFilter = CrossIgnore.ChatFilter or {}
 CrossIgnore.ChatFilter = ChatFilter
 
@@ -20,12 +23,12 @@ local CHAT_EVENTS = {
 
 local channelCache = {}
 
-local function safeString(value)
+local function SafeString(value)
     return type(value) == "string" and value or ""
 end
 
-local function safeLower(value)
-    local text = safeString(value)
+local function SafeLower(value)
+    local text = SafeString(value)
     if text == "" then
         return ""
     end
@@ -37,9 +40,9 @@ local function RefreshChannelCache()
     local chList = { GetChannelList() }
     for i = 1, #chList, 3 do
         local num = chList[i]
-        local name = safeString(chList[i + 1])
+        local name = SafeString(chList[i + 1])
         if name ~= "" then
-            local cleanName = safeLower(name)
+            local cleanName = SafeLower(name)
             if type(num) == "number" then
                 channelCache[tostring(num)] = cleanName
             end
@@ -61,13 +64,13 @@ local function NormalizeChannelKey(channel)
     if type(channel) == "number" then
         key = tostring(channel)
     else
-        key = safeString(channel)
+        key = SafeString(channel)
     end
     if key == "" then
         return "all channels"
     end
-    local normalized = channelCache[safeLower(key)] or key
-    return safeLower(normalized)
+    local normalized = channelCache[SafeLower(key)] or key
+    return SafeLower(normalized)
 end
 function ChatFilter:NormalizeChannelKey(ch)
     return NormalizeChannelKey(ch)
@@ -78,7 +81,7 @@ local function GetChannelCategory(event, ...)
         for i = 1, select("#", ...) do
             local a = select(i, ...)
             if type(a) == "string" and a ~= "" then
-                local clean = safeLower(a:gsub("^%d+%.%s*", ""))
+                local clean = SafeLower(a:gsub("^%d+%.%s*", ""))
                 return channelCache[clean] or clean
             end
         end
@@ -117,7 +120,7 @@ local function EscapeForPattern(text)
     return (text:gsub("(%W)", "%%%1"))
 end
 
-local function buildStrictCore(wordLower)
+local function BuildStrictCore(wordLower)
     local chars = {}
     for c in wordLower:gmatch(".") do
         chars[#chars+1] = EscapeForPattern(c)
@@ -129,7 +132,7 @@ local function buildStrictCore(wordLower)
     return table.concat(chars, "[%s%p]*")
 end
 
-local function buildNonStrictList(wordLower)
+local function BuildNonStrictList(wordLower)
     local out = {}
     local exact = EscapeForPattern(wordLower)
     local chars = {}
@@ -159,9 +162,9 @@ local function buildNonStrictList(wordLower)
 end
 
 local compiledMatchers = {}
-local reusableBuckets = {} 
+local reusableBuckets = {}
 
-local function buildMatcherForChannel(channelKey, patterns)
+local function BuildMatcherForChannel(channelKey, patterns)
     if not patterns or #patterns == 0 then
         compiledMatchers[channelKey] = nil
         return
@@ -195,10 +198,10 @@ local function CompilePatternsForChannel(channelKey)
             local wordLower = (type(entry) == "table" and entry.normalized) or (type(entry) == "string" and entry:lower())
             if wordLower and wordLower ~= "" then
                 if type(entry) == "table" and entry.strict then
-                    local core = buildStrictCore(wordLower)
+                    local core = BuildStrictCore(wordLower)
                     if core then bucket[#bucket+1] = core end
                 else
-                    local plist = buildNonStrictList(wordLower)
+                    local plist = BuildNonStrictList(wordLower)
                     for i = 1, #plist do
                         bucket[#bucket+1] = plist[i]
                     end
@@ -217,10 +220,10 @@ local function CompilePatterns()
 end
 
 local function IsFilteredMessage(msg, sender, event, ...)
-    msg = safeString(msg)
-    sender = safeString(sender)
-    local msgLower = safeLower(msg)
-    local senderLower = safeLower(sender)
+    msg = SafeString(msg)
+    sender = SafeString(sender)
+    local msgLower = SafeLower(msg)
+    local senderLower = SafeLower(sender)
 
     local filters = ChatFilter:GetFilters()
 
@@ -333,11 +336,11 @@ local function AddLog(entry)
 end
 
 local recentMessages = {}
-local DUPLICATE_EXPIRY = 60 
+local DUPLICATE_EXPIRY = 60
 
 local function IsDuplicate(msg, sender)
-    msg = safeString(msg)
-    sender = safeString(sender)
+    msg = SafeString(msg)
+    sender = SafeString(sender)
     local now = time()
     recentMessages[sender] = recentMessages[sender] or {}
     local senderMessages = recentMessages[sender]
@@ -354,7 +357,7 @@ local cleanupFrame = CreateFrame("Frame")
 cleanupFrame.elapsed = 0
 cleanupFrame:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = self.elapsed + elapsed
-    if self.elapsed < 30 then return end 
+    if self.elapsed < 30 then return end
     self.elapsed = 0
 
     local now = time()
@@ -371,10 +374,10 @@ cleanupFrame:SetScript("OnUpdate", function(self, elapsed)
 end)
 
 local function IsFilteredForChannel(msg, sender, channelKey)
-    msg = safeString(msg)
-    sender = safeString(sender)
-    local msgLower = safeLower(msg)
-    local senderLower = safeLower(sender)
+    msg = SafeString(msg)
+    sender = SafeString(sender)
+    local msgLower = SafeLower(msg)
+    local senderLower = SafeLower(sender)
 
     local filters = CrossIgnore.ChatFilter:GetFilters()
     local list = filters[channelKey] or {}
@@ -405,7 +408,6 @@ end
 function ChatFilter:IsDebugActive()
     return self.debugActive == true
 end
-
 
 function ChatFilter:ClearLog()
     if not self.blockedMessages then
@@ -458,13 +460,13 @@ local function ChatEventFilter(chatFrame, event, msg, sender, ...)
 
     if ChatFilter.debugActive then
         AddLog(entry)
-		if not IsDuplicate(msg, sender) and CrossIgnore.ChatFilter.OnBlockedMessageAdded then
-				for _, callback in ipairs(CrossIgnore.ChatFilter.OnBlockedMessageAdded) do
-					callback(entry)
-				end
-			end
-		end
-	end
+        if not IsDuplicate(msg, sender) and CrossIgnore.ChatFilter.OnBlockedMessageAdded then
+                for _, callback in ipairs(CrossIgnore.ChatFilter.OnBlockedMessageAdded) do
+                    callback(entry)
+                end
+            end
+        end
+    end
 
     return blocked
 end

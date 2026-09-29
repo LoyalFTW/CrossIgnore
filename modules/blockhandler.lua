@@ -1,3 +1,6 @@
+local _, ns = ...
+local CrossIgnore = ns.Addon
+
 local BlockHandler = {}
 
 local AddMessageEventFilter = (ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter) or ChatFrame_AddMessageEventFilter
@@ -82,7 +85,7 @@ end
 
 local function ChatEventFilter(_, event, msg, sender, ...)
     if IsBlockedPlayer(sender) then
-        return true 
+        return true
     end
     return false
 end
@@ -159,8 +162,6 @@ whisperFrame:SetScript("OnEvent", function(_, event, msg, sender, ...)
 end)
 
 end
-
-
 
 function BlockHandler:Initialize()
     local settings = CrossIgnore.db.profile.settings

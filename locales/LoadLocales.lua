@@ -1,5 +1,5 @@
-local addonName, addonTable = ...
-addonTable.Locales = addonTable.Locales or {}
+local _, ns = ...
+ns.Locales = ns.Locales or {}
 
 local locale = GetLocale()
-addonTable.L = addonTable.Locales[locale] or addonTable.Locales["enUS"]
+ns.L = ns.Locales[locale] or ns.Locales["enUS"]
