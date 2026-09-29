@@ -10,7 +10,7 @@
 ## Notes-frFR: Bloqueur de spam, permettant de créer une liste globale de blocage et d'autres filtres anti-spam, bloque également les personnes qui vous ignorent dans LFG
 ## SavedVariables: CrossIgnoreDB, CrossIgnoreMinimapDB
 ## SavedVariablesPerCharacter: CrossIgnoreSingleDB
-## IconTexture: Interface\AddOns\CrossIgnore\media\icon
+## IconTexture: Interface\AddOns\CrossIgnore\Media\icon
 ## X-Curse-Project-ID: 1290810
 ## X-Wago-ID: ZKbeW461
 ## Category-enUS: CrossIgnore
@@ -78,4 +78,3 @@ UI/Tooltips.lua
 UI/Entry.lua
 UI/MinimapButton.lua
 Core/Lifecycle.lua
-
