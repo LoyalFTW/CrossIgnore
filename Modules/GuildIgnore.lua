@@ -32,6 +32,8 @@ local pendingBubbles = {}
 local hiddenBubbles = {}
 local bubbleTicker
 local purgeQueued
+local pendingWho
+local whoRequestId = 0
 
 local function Readable(value)
     return not canaccessvalue or canaccessvalue(value)
@@ -50,8 +52,30 @@ local function PlayerKey(name)
     return fullName and fullName:lower()
 end
 
+local function MatchesWhoName(result, query)
+    result, query = Clean(result), Clean(query)
+    if not result or not query then return false end
+    result, query = result:lower(), query:lower()
+    return result == query or (result:match("^[^-]+") == query:match("^[^-]+") and (not result:find("-", 1, true) or not query:find("-", 1, true)))
+end
+
 local function Rules()
     return CrossIgnore.globalDB.global.guildIgnores
+end
+
+local function MatchingRule(name)
+    name = Clean(name)
+    if not name then return nil end
+    local guild = name:lower()
+    if Rules()[guild] then return guild end
+    local best
+    for rule in pairs(Rules()) do
+        if type(rule) == "string" and rule ~= "" and guild:find(rule, 1, true)
+            and (not best or #rule > #best) then
+            best = rule
+        end
+    end
+    return best
 end
 
 function GuildIgnore:GetRules()
@@ -59,20 +83,20 @@ function GuildIgnore:GetRules()
 end
 
 function GuildIgnore:GetRetentionDays(name)
-    name = Clean(name)
-    if not name then return 1 end
-    local days = CrossIgnore.globalDB.global.guildRetention[name:lower()]
+    local rule = MatchingRule(name)
+    if not rule then return 1 end
+    local days = CrossIgnore.globalDB.global.guildRetention[rule]
     return RETENTION_DAYS[days] and days or 1
 end
 
 function GuildIgnore:SetRetentionDays(name, days)
     name = Clean(name)
-    if not name or not RETENTION_DAYS[days] or not self:IsGuildBlocked(name) then return false end
+    if not name or not RETENTION_DAYS[days] or not Rules()[name:lower()] then return false end
     local key = name:lower()
     CrossIgnore.globalDB.global.guildRetention[key] = days ~= 1 and days or nil
     local now = time()
     for player, record in pairs(guildByPlayer) do
-        if type(record) == "table" and type(record.guild) == "string" and record.guild:lower() == key
+        if type(record) == "table" and type(record.guild) == "string" and MatchingRule(record.guild) == key
             and (type(record.seen) ~= "number" or record.seen + days * SECONDS_PER_DAY < now) then
             guildByPlayer[player] = nil
             guildCount = guildCount - 1
@@ -90,7 +114,7 @@ function GuildIgnore:GetKnownPlayersForGuild(name)
     local retention = self:GetRetentionDays(name) * SECONDS_PER_DAY
     for key, record in pairs(guildByPlayer) do
         if type(record) == "table" and type(record.guild) == "string" and type(record.seen) == "number"
-            and record.seen + retention >= now and record.guild:lower() == name:lower() then
+            and record.seen + retention >= now and MatchingRule(record.guild) == name:lower() then
             players[#players + 1] = { name = record.name or key, seen = record.seen }
         end
     end
@@ -99,8 +123,7 @@ function GuildIgnore:GetKnownPlayersForGuild(name)
 end
 
 function GuildIgnore:IsGuildBlocked(name)
-    name = Clean(name)
-    return name and Rules()[name:lower()] ~= nil or false
+    return MatchingRule(name) ~= nil
 end
 
 function GuildIgnore:DeclineBlockedGuildInvite(guildName)
@@ -165,13 +188,13 @@ function GuildIgnore:Remember(name, guild)
     end
     local guildUI = ns.UI and ns.UI.GuildIgnore
     if guildUI and guildUI.selected and guildUI.panel and guildUI.panel:IsShown()
-        and ((previous and previous.guild and previous.guild:lower() == guildUI.selected:lower()) or guild:lower() == guildUI.selected:lower()) then
+        and ((previous and previous.guild and MatchingRule(previous.guild) == guildUI.selected:lower()) or MatchingRule(guild) == guildUI.selected:lower()) then
         guildUI:RefreshMembers()
     end
 end
 
 function GuildIgnore:ObserveUnit(unit, authoritative)
-    if not unit then return end
+    if not Readable(unit) or not unit then return end
     local exists = UnitExists(unit)
     local isPlayer = UnitIsPlayer(unit)
     if not Readable(exists) or not Readable(isPlayer) or not exists or not isPlayer then return end
@@ -195,24 +218,78 @@ function GuildIgnore:HarvestWho()
     local infoFunction = C_FriendList and C_FriendList.GetWhoInfo or GetWhoInfo
     if not countFunction or not infoFunction then return end
     local count = countFunction() or 0
+    local foundName, foundGuild
     for i = 1, count do
         local first, second = infoFunction(i)
         if Readable(first) and type(first) == "table" then
             if Readable(first.fullName) and Readable(first.fullGuildName) then
                 self:Remember(first.fullName, first.fullGuildName or "")
+                if pendingWho and MatchesWhoName(first.fullName, pendingWho) then
+                    foundName, foundGuild = first.fullName, first.fullGuildName
+                end
             end
         elseif Readable(first) and Readable(second) then
             self:Remember(first, second or "")
+            if pendingWho and MatchesWhoName(first, pendingWho) then
+                foundName, foundGuild = first, second
+            end
         end
     end
+    if pendingWho then
+        local name = pendingWho
+        pendingWho = nil
+        local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or SetWhoToUI
+        if setWhoToUi then pcall(setWhoToUi, false) end
+        if foundName then
+            CrossIgnore:Print(string.format(ns.L["GUILD_IGNORE_LOOKUP_FOUND"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_FOUND, foundName, Clean(foundGuild) or (ns.L["GUILD_IGNORE_LOOKUP_NO_GUILD"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_NO_GUILD)))
+        else
+            CrossIgnore:Print(string.format(ns.L["GUILD_IGNORE_LOOKUP_NOT_FOUND"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_NOT_FOUND, name))
+        end
+    end
+end
+
+function GuildIgnore:ObserveGuildRoster()
+    if not IsInGuild or not IsInGuild() or not GetNumGuildMembers or not GetGuildRosterInfo then return end
+    local guild = GetGuildInfo("player")
+    if not Clean(guild) then return end
+    for i = 1, GetNumGuildMembers() do
+        local name = GetGuildRosterInfo(i)
+        if Clean(name) then self:Remember(name, guild) end
+    end
+end
+
+function GuildIgnore:RequestGuildRoster()
+    if not IsInGuild or not IsInGuild() then return end
+    local request = C_GuildInfo and C_GuildInfo.GuildRoster or GuildRoster
+    if request then pcall(request) end
 end
 
 function GuildIgnore:LookUpPlayer(name)
     name = Clean(name)
     local sendWho = C_FriendList and C_FriendList.SendWho or SendWho
-    if not name or not sendWho then return false end
+    local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or SetWhoToUI
+    if not name or not sendWho or not setWhoToUi then return false end
+    if pendingWho then return false, "busy" end
+    local routed = pcall(setWhoToUi, true)
+    if not routed then return false end
     local ok = pcall(sendWho, 'n-"' .. name .. '"')
-    return ok
+    if not ok then
+        pcall(setWhoToUi, false)
+        return false
+    end
+    pendingWho = name
+    whoRequestId = whoRequestId + 1
+    local requestId = whoRequestId
+    CrossIgnore:Print(string.format(ns.L["GUILD_IGNORE_LOOKUP_STARTED"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_STARTED, name))
+    C_Timer.After(15, function()
+        if pendingWho and requestId == whoRequestId then
+            local timedOutName = pendingWho
+            pendingWho = nil
+            pcall(setWhoToUi, false)
+            CrossIgnore:Print(string.format(ns.L["GUILD_IGNORE_LOOKUP_TIMEOUT"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_TIMEOUT, timedOutName))
+        end
+    end)
+    return true
 end
 
 function GuildIgnore:PurgeChat()
@@ -338,21 +415,36 @@ function GuildIgnore:Initialize()
     if FILTER then
         for _, event in ipairs(CHAT_EVENTS) do pcall(FILTER, event, FilterChat) end
     end
+    if TooltipDataProcessor and Enum and Enum.TooltipDataType and Enum.TooltipDataType.Unit then
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
+            local _, unit = tooltip:GetUnit()
+            if Readable(unit) and unit then self:ObserveUnit(unit) end
+        end)
+    elseif GameTooltip then
+        GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
+            local _, unit = tooltip:GetUnit()
+            if Readable(unit) and unit then self:ObserveUnit(unit) end
+        end)
+    end
     local frame = CreateFrame("Frame")
-    for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_FOCUS_CHANGED", "NAME_PLATE_UNIT_ADDED", "GROUP_ROSTER_UPDATE", "WHO_LIST_UPDATE", "PLAYER_GUILD_UPDATE", "GUILD_INVITE_REQUEST" }) do
+    for _, event in ipairs({ "PLAYER_ENTERING_WORLD", "PLAYER_TARGET_CHANGED", "UPDATE_MOUSEOVER_UNIT", "PLAYER_FOCUS_CHANGED", "NAME_PLATE_UNIT_ADDED", "GROUP_ROSTER_UPDATE", "GUILD_ROSTER_UPDATE", "WHO_LIST_UPDATE", "PLAYER_GUILD_UPDATE", "GUILD_INVITE_REQUEST" }) do
         pcall(frame.RegisterEvent, frame, event)
     end
     frame:SetScript("OnEvent", function(_, event, unit, guildName)
         if event == "GUILD_INVITE_REQUEST" then self:DeclineBlockedGuildInvite(guildName)
         elseif event == "WHO_LIST_UPDATE" then self:HarvestWho()
+        elseif event == "GUILD_ROSTER_UPDATE" then self:ObserveGuildRoster()
         elseif event == "NAME_PLATE_UNIT_ADDED" or event == "PLAYER_GUILD_UPDATE" then self:ObserveUnit(unit, event == "PLAYER_GUILD_UPDATE")
-        elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then self:ObserveGroup()
+        elseif event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
+            self:ObserveGroup()
+            if event == "PLAYER_ENTERING_WORLD" then self:RequestGuildRoster(); self:ObserveGuildRoster() end
         elseif event == "PLAYER_TARGET_CHANGED" then self:ObserveUnit("target")
         elseif event == "UPDATE_MOUSEOVER_UNIT" then self:ObserveUnit("mouseover")
         elseif event == "PLAYER_FOCUS_CHANGED" then self:ObserveUnit("focus") end
     end)
     self.frame = frame
     self:ObserveGroup()
+    self:ObserveGuildRoster()
     if C_NamePlate and C_NamePlate.GetNamePlates then
         for _, plate in ipairs(C_NamePlate.GetNamePlates() or {}) do
             if plate.namePlateUnitToken then self:ObserveUnit(plate.namePlateUnitToken) end

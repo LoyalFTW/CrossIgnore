@@ -110,17 +110,20 @@ function M:Build(panel, addon)
 
         local lookupBox = W:CreateEditBox(panel, 275, 24, "TOPLEFT", 15, -393)
         W:AttachPlaceholder(lookupBox, T("GUILD_IGNORE_PLAYER"))
-        W:CreateButton(panel, T("GUILD_IGNORE_LOOKUP"), "TOPLEFT", 300, -393, 130, 24, function()
+        local function LookUpPlayer()
                 local name = strtrim(lookupBox:GetText() or "")
-                if name ~= "" and not addon.GuildIgnore:LookUpPlayer(name) then
-                        addon:Print(T("GUILD_IGNORE_LOOKUP_UNAVAILABLE"))
+                if name == "" then
+                        addon:Print(T("GUILD_IGNORE_LOOKUP_INVALID"))
+                else
+                        local ok, reason = addon.GuildIgnore:LookUpPlayer(name)
+                        if not ok then
+                                addon:Print(T(reason == "busy" and "GUILD_IGNORE_LOOKUP_BUSY" or "GUILD_IGNORE_LOOKUP_UNAVAILABLE"))
+                        end
                 end
-        end)
+        end
+        W:CreateButton(panel, T("GUILD_IGNORE_LOOKUP"), "TOPLEFT", 300, -393, 130, 24, LookUpPlayer)
         lookupBox:SetScript("OnEnterPressed", function()
-                local name = strtrim(lookupBox:GetText() or "")
-                if name ~= "" and not addon.GuildIgnore:LookUpPlayer(name) then
-                        addon:Print(T("GUILD_IGNORE_LOOKUP_UNAVAILABLE"))
-                end
+                LookUpPlayer()
                 lookupBox:ClearFocus()
         end)
         lookupBox:SetScript("OnEscapePressed", lookupBox.ClearFocus)
@@ -175,7 +178,7 @@ function M:Refresh()
         end
         for i = #names + 1, #self.rows do self.rows[i]:Hide() end
         self.content:SetHeight(math.max(145, #names * 22))
-        if self.selected and not self.addon.GuildIgnore:IsGuildBlocked(self.selected) then
+        if self.selected and not self.addon.GuildIgnore:GetRules()[self.selected:lower()] then
                 self.selected = nil
                 self.details:Hide()
         elseif self.details:IsShown() then
