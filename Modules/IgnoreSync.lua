@@ -178,25 +178,35 @@ end
 
 function CrossIgnore:CheckExpiredIgnores()
     local now = time()
-    local function CheckAndRemove(list)
-        for i = #list, 1, -1 do
-            local entry = list[i]
+    local expired, seen = {}, {}
+    local function CollectExpired(list)
+        for _, entry in ipairs(list) do
             if entry.expires and entry.expires > 0 and entry.expires <= now then
-                local base, realm = entry.name, entry.server
-                self:RemoveFromAllAddonLists(base, realm)
-                for j = 1, C_FriendList.GetNumIgnores() do
-                    local nameOnList = C_FriendList.GetIgnoreName(j)
-                    local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
-                    if nameOnList and ((listedName == base and listedRealm == realm) or (not self.isForever and StripRealm(nameOnList) == base)) then
-                        C_FriendList.DelIgnore(nameOnList)
-                        break
-                    end
+                local key = MakeKey(entry.name, entry.server)
+                if key and not seen[key] then
+                    seen[key] = true
+                    expired[#expired + 1] = { name = entry.name, server = entry.server }
                 end
             end
         end
     end
-    CheckAndRemove(self.charDB.profile.players)
-    CheckAndRemove(self.charDB.profile.overLimitPlayers)
-    CheckAndRemove(self.globalDB.global.players)
-    self:RefreshBlockedList()
+    local players, overLimitPlayers, globalPlayers, globalOverLimitPlayers = self:GetAllLists()
+    CollectExpired(players)
+    CollectExpired(overLimitPlayers)
+    CollectExpired(globalPlayers)
+    CollectExpired(globalOverLimitPlayers)
+
+    for _, entry in ipairs(expired) do
+        local base, realm = entry.name, entry.server
+        self:RemoveFromAllAddonLists(base, realm)
+        for j = 1, C_FriendList.GetNumIgnores() do
+            local nameOnList = C_FriendList.GetIgnoreName(j)
+            local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
+            if nameOnList and ((listedName == base and listedRealm == realm) or (not self.isForever and StripRealm(nameOnList) == base)) then
+                C_FriendList.DelIgnore(nameOnList)
+                break
+            end
+        end
+    end
+    if #expired > 0 then self:RefreshBlockedList() end
 end

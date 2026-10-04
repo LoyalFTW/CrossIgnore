@@ -40,6 +40,19 @@ end
 function CrossIgnore:OnEnable()
     self:RefreshKnownRealms()
     self:ProcessPendingRemovals()
+    self:CheckExpiredIgnores()
+    if not self._expiryTicker then
+        self._expiryTicker = C_Timer.NewTicker(300, function()
+            self:CheckExpiredIgnores()
+        end)
+    end
+end
+
+function CrossIgnore:OnDisable()
+    if self._expiryTicker then
+        self._expiryTicker:Cancel()
+        self._expiryTicker = nil
+    end
 end
 
 function CrossIgnore:OnPlayerLogin()
