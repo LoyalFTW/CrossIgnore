@@ -49,7 +49,11 @@ function CrossIgnore:ShowUnitMenuButton(tag, contextData)
     local name
     local unit = ToSafeString(contextData.unit)
     if unit then
-        name = self:GetUnitPlayerName(unit)
+        local realm
+        name, realm = self:GetUnitPlayerName(unit)
+        if name and not self.isForever and realm and realm ~= "" then
+            name = name .. "-" .. realm
+        end
     else
         name = ToSafeString(contextData.name)
         local server = ToSafeString(contextData.server)

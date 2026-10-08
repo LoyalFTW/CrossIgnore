@@ -410,7 +410,7 @@ function UI:BuildPopups(CrossIgnore, CrossIgnoreDB)
             playerName = rawName .. " " .. strtrim(surnameBox:GetText() or "")
         else
             local realm = popup:GetSelectedRealm()
-            playerName = (rawName:match("^[^%-]+") or rawName) .. "-" .. realm
+            playerName = rawName:find("-", 1, true) and rawName or rawName .. "-" .. realm
         end
         local fullName, base, normalizedRealm = activeAddon:NormalizePlayerName(playerName)
         if not fullName or not base or normalizedRealm == nil then
