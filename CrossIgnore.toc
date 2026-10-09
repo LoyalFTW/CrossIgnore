@@ -43,6 +43,8 @@ Modules/IgnoreSync.lua
 Modules/Ignore.lua
 Modules/LFG.lua
 Modules/ChatFilter.lua
+Modules/ChatFilterRules.lua
+Modules/ChatFilterPresets.lua
 Modules/ChatFilterDefaults.lua
 Modules/BlockHandler.lua
 Modules/GuildIgnore.lua
@@ -67,6 +69,7 @@ Data/Realms.lua
 UI/Panels/IgnoreList.lua
 UI/Panels/GuildIgnore.lua
 UI/Panels/WordFilter.lua
+UI/Panels/ChatFilterPresets.lua
 UI/AddPlayerPopup.lua
 UI/Navigation.lua
 UI/MainFrame.lua

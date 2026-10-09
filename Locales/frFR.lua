@@ -2,6 +2,20 @@ local _, ns = ...
 ns.Locales = ns.Locales or {}
 
 ns.Locales.frFR = {
+    FILTER_PRESETS_HEADER = "Filtres avancés",
+    FILTER_PRESETS_DESC = "Tous les canaux. Désactivés par défaut. Survolez pour les détails.",
+    FILTER_PRESET_NON_LATIN = "Chinois / Coréen / Japonais",
+    FILTER_PRESET_NON_LATIN_DESC = "Masque les messages contenant des caractères chinois, coréens ou japonais. Les lettres latines accentuées, le cyrillique et les emoji sont autorisés.",
+    FILTER_PRESET_GUILD = "Recrutement de guilde",
+    FILTER_PRESET_GUILD_DESC = "Masque les annonces de recrutement identifiées par les noms, liens de guilde et expressions de recrutement en anglais.",
+    FILTER_PRESET_COMMUNITY = "Recrutement de communauté",
+    FILTER_PRESET_COMMUNITY_DESC = "Masque les liens d'invitation aux communautés et les annonces de recrutement en anglais.",
+    FILTER_PRESET_BOOST = "Vendeurs de boosts Mythique+ / Raid",
+    FILTER_PRESET_BOOST_DESC = "Masque les offres en anglais de vente de services Mythique+, raid, carry ou boost.",
+    FILTER_PRESET_CRAFTING = "Vendeurs d'artisanat",
+    FILTER_PRESET_CRAFTING_DESC = "Masque les annonces d'artisanat en anglais avec liens d'objet ou de métier, ou avec WTS/LFW.",
+    FILTER_PRESET_LEVELING = "Vendeurs de montée de niveau",
+    FILTER_PRESET_LEVELING_DESC = "Masque les annonces en anglais de services de power leveling.",
 
     TIME_HEADER          = "Maintenant",
     TIME_HEADER2         = "Jamais",

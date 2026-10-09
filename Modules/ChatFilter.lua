@@ -214,6 +214,7 @@ local function CompilePatternsForChannel(channelKey)
 end
 
 local function CompilePatterns()
+    wipe(compiledMatchers)
     for channelKey, _ in pairs(ChatFilter:GetFilters()) do
         CompilePatternsForChannel(channelKey)
     end
@@ -224,6 +225,9 @@ local function IsFilteredMessage(msg, sender, event, ...)
     sender = SafeString(sender)
     local msgLower = SafeLower(msg)
     local senderLower = SafeLower(sender)
+
+    local preset = ChatFilter:MatchPreset(msg)
+    if preset then return true, preset, false end
 
     local filters = ChatFilter:GetFilters()
 
@@ -322,6 +326,7 @@ local function CountFilteredMessage(chatFrame, event, msg, sender, lineID, chann
     if ChatFilter.OnFilteredMessageCountChanged then
         ChatFilter.OnFilteredMessageCountChanged()
     end
+    return true
 end
 
 local function AddLog(entry)
@@ -426,6 +431,13 @@ end
 
 local function ChatEventFilter(chatFrame, event, msg, sender, ...)
     local blocked, matchedWord, isStrict, matchedKey = false, nil, false, nil
+    local matchedRuleID, matchedExpression
+
+    matchedWord, matchedRuleID, matchedExpression = ChatFilter:MatchPreset(msg)
+    if matchedWord then
+        blocked = true
+        matchedKey = "all channels"
+    end
 
     local keysToCheck = { "all channels" }
     local channelKey = GetChannelCategory(event, ...)
@@ -434,6 +446,7 @@ local function ChatEventFilter(chatFrame, event, msg, sender, ...)
     end
 
     for _, key in ipairs(keysToCheck) do
+        if blocked then break end
         local word, strict = IsFilteredForChannel(msg, sender, key)
         if word then
             matchedKey = key
@@ -445,7 +458,7 @@ local function ChatEventFilter(chatFrame, event, msg, sender, ...)
     end
 
     if blocked then
-        CountFilteredMessage(chatFrame, event, msg, sender, select(9, ...), channelKey)
+        local counted = CountFilteredMessage(chatFrame, event, msg, sender, select(9, ...), channelKey)
         local now = time()
         local entry = {
             message   = msg,
@@ -456,7 +469,10 @@ local function ChatEventFilter(chatFrame, event, msg, sender, ...)
             event     = event,
             time      = date("%Y-%m-%d %H:%M:%S", GetServerTime()),
             timestamp = now,
+            chatChannel = channelKey,
+            expression = matchedExpression or matchedWord,
         }
+        if counted then ChatFilter:RecordBlockedMessage(entry, matchedRuleID) end
 
     if ChatFilter.debugActive then
         AddLog(entry)
@@ -482,14 +498,15 @@ function ChatFilter:UpdateEventRegistration()
 
     CompilePatterns()
 
-    local haveAny = next(compiledMatchers) ~= nil
+    local havePresets = self:HasEnabledPresets()
+    local haveAny = next(compiledMatchers) ~= nil or havePresets
     if not haveAny then return end
 
     for channelName, events in pairs(CHAT_EVENTS) do
         local shouldHook = false
         local keyLower = channelName:lower()
 
-        if compiledMatchers["all channels"] then
+        if compiledMatchers["all channels"] or havePresets then
             shouldHook = true
         end
 

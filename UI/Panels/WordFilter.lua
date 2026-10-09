@@ -103,7 +103,8 @@ function M:Build(panel, CrossIgnore, CrossIgnoreDB)
     self.CrossIgnore = CrossIgnore
     self.CrossIgnoreDB = CrossIgnoreDB
 
-    local searchBox = W:CreateEditBox(panel, 425, 24, "TOPLEFT", 15, -10)
+    local searchBox = W:CreateEditBox(panel, 280, 24, "TOPLEFT", 15, -10)
+    UI.ChatFilterPresets:Build(panel, CrossIgnore)
     W:AttachPlaceholder(searchBox, L["SEARCH_PLACEHOLDER"])
     searchBox:SetScript("OnTextChanged", function(selfBox)
         local t = selfBox:GetText() or ""
@@ -249,6 +250,7 @@ function M:Refresh(searchText)
     local CrossIgnoreDB = self.CrossIgnoreDB
     local CrossIgnore = self.CrossIgnore
     if not self.table then return end
+    UI.ChatFilterPresets:Refresh()
     self:RefreshFilteredCount()
 
     local list = Data.BuildWordList(CrossIgnoreDB)

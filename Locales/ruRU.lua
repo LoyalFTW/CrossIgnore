@@ -2,6 +2,20 @@ local _, ns = ...
 ns.Locales = ns.Locales or {}
 
 ns.Locales.ruRU = {
+    FILTER_PRESETS_HEADER = "Сложные фильтры",
+    FILTER_PRESETS_DESC = "Все каналы. По умолчанию выключены. Подробности при наведении.",
+    FILTER_PRESET_NON_LATIN = "Китайский / Корейский / Японский",
+    FILTER_PRESET_NON_LATIN_DESC = "Скрывает сообщения с китайскими, корейскими или японскими символами. Латиница с диакритикой, кириллица и эмодзи разрешены.",
+    FILTER_PRESET_GUILD = "Набор в гильдию",
+    FILTER_PRESET_GUILD_DESC = "Скрывает объявления о наборе по названиям, ссылкам гильдий и фразам набора на английском языке.",
+    FILTER_PRESET_COMMUNITY = "Набор в сообщество",
+    FILTER_PRESET_COMMUNITY_DESC = "Скрывает ссылки приглашений в сообщества и объявления о наборе на английском языке.",
+    FILTER_PRESET_BOOST = "Продажа Mythic+ / рейдовых бустов",
+    FILTER_PRESET_BOOST_DESC = "Скрывает предложения на английском языке о продаже Mythic+, рейдов и бустов.",
+    FILTER_PRESET_CRAFTING = "Продажа услуг ремесла",
+    FILTER_PRESET_CRAFTING_DESC = "Скрывает объявления ремесленников на английском языке со ссылками на предметы или профессии, либо с WTS/LFW.",
+    FILTER_PRESET_LEVELING = "Продажа прокачки",
+    FILTER_PRESET_LEVELING_DESC = "Скрывает объявления на английском языке о продаже быстрой прокачки.",
 
     TIME_HEADER          = "Сейчас",
     TIME_HEADER2         = "Никогда",

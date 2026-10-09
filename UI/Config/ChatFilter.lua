@@ -348,6 +348,9 @@ end
         local filters = ChatFilter:GetFilters() or {}
         local msgLower = message:lower()
 
+        local preset = ChatFilter:MatchPreset(message)
+        if preset then matches[#matches+1] = { channel = L["CHANNEL_ALL"], word = preset, strict = false } end
+
         for channelName, wordList in pairs(filters) do
             if type(wordList) == "table" and #wordList > 0 then
                 for _, wordEntry in ipairs(wordList) do
