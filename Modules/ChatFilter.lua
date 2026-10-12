@@ -23,6 +23,45 @@ local CHAT_EVENTS = {
 
 local channelCache = {}
 
+function ChatFilter:GetTrustedPlayers()
+    self:GetFilters()
+    local filters = CrossIgnoreDB.global.filters
+    if type(filters.trustedPlayers) ~= "table" then filters.trustedPlayers = {} end
+    return filters.trustedPlayers
+end
+
+local function TrustedPlayerName(name)
+    if type(name) ~= "string" or (canaccessvalue and not canaccessvalue(name)) then return nil end
+    name = strtrim(name)
+    if name == "" then return nil end
+    local fullName, base, realm = CrossIgnore:NormalizePlayerName(name)
+    if not fullName then return nil end
+    if not CrossIgnore.isForever and (base:find("%s") or realm == "" or realm:find("-", 1, true)) then return nil end
+    return fullName:gsub("%s+", CrossIgnore.isForever and " " or "")
+end
+
+function ChatFilter:IsPlayerTrusted(name)
+    local fullName = TrustedPlayerName(name)
+    return fullName ~= nil and type(self:GetTrustedPlayers()[fullName:lower()]) == "string"
+end
+
+function ChatFilter:SetPlayerTrusted(name, trusted)
+    local fullName = TrustedPlayerName(name)
+    if not fullName then return false end
+    self:GetTrustedPlayers()[fullName:lower()] = trusted and fullName or nil
+    if self.OnTrustedPlayersChanged then self.OnTrustedPlayersChanged() end
+    return true
+end
+
+function ChatFilter:GetTrustedPlayerList()
+    local list = {}
+    for _, name in pairs(self:GetTrustedPlayers()) do
+        if type(name) == "string" then list[#list + 1] = name end
+    end
+    table.sort(list, function(a, b) return a:lower() < b:lower() end)
+    return list
+end
+
 local function SafeString(value)
     return type(value) == "string" and value or ""
 end
@@ -221,6 +260,7 @@ local function CompilePatterns()
 end
 
 local function IsFilteredMessage(msg, sender, event, ...)
+    if ChatFilter:IsPlayerTrusted(sender) then return false end
     msg = SafeString(msg)
     sender = SafeString(sender)
     local msgLower = SafeLower(msg)
@@ -430,6 +470,7 @@ function ChatFilter:ClearLog()
 end
 
 local function ChatEventFilter(chatFrame, event, msg, sender, ...)
+    if ChatFilter:IsPlayerTrusted(sender) then return false end
     local blocked, matchedWord, isStrict, matchedKey = false, nil, false, nil
     local matchedRuleID, matchedExpression
 

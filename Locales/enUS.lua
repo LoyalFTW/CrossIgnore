@@ -2,6 +2,14 @@ local _, ns = ...
 ns.Locales = ns.Locales or {}
 
 ns.Locales.enUS = {
+    FILTER_TRUST_PLAYER = "Trust player",
+    FILTER_TRUSTED_PLAYERS = "Trusted Players",
+    FILTER_TRUST_REMOVE = "Remove trust",
+    FILTER_TRUST_HINT = "Shared across characters. Bypasses word and advanced filters. Player and guild ignores still apply.",
+    FILTER_TRUST_NAME = "Player-Realm (or local player name)",
+    FILTER_TRUST_NAME_FOREVER = "First Last",
+    FILTER_TRUST_INVALID = "Enter a valid player name.",
+    FILTER_TRUST_EMPTY = "No trusted players.",
     FILTER_PRESETS_HEADER = "Advanced Filters",
     FILTER_RULE_NAME = "Description",
     FILTER_RULE_ACTIVE = "On",

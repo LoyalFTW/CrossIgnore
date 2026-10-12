@@ -14,6 +14,7 @@ function CrossIgnore:InitDB()
             guildRetention = {},
             guildAutoDeclineInvites = true,
             filters = {
+                trustedPlayers = {},
                 totalFilteredMessages = 0,
                 presets = {},
                 words = {

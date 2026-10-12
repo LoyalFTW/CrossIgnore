@@ -46,12 +46,15 @@ function M:ShowView(view)
     self.view = view
     if view == "list" then self:Refresh() end
     if view == "history" then self:RefreshHistory() end
+    if view == "trusted" then self:RefreshTrustedPlayers() end
 end
 
 function M:Build(panel, CrossIgnore)
     self.ChatFilter = CrossIgnore.ChatFilter
+    self.CrossIgnore = CrossIgnore
     self.rows = {}
     self.historyRows = {}
+    self.trustedRows = {}
     local button = W:CreateButton(panel, Text("FILTER_PRESETS_HEADER"), "TOPRIGHT", -10, -10, 130, 24)
     button:SetNormalFontObject("GameFontNormalSmall")
     button:SetHighlightFontObject("GameFontHighlightSmall")
@@ -72,7 +75,7 @@ function M:Build(panel, CrossIgnore)
     self.title = Label(popup, Text("FILTER_PRESETS_HEADER"), 12, -12, 350, "GameFontNormal")
     W:CreateButton(popup, "X", "TOPRIGHT", -8, -8, 24, 22, function() popup:Hide() end)
     self.views = {}
-    for _, key in ipairs({ "list", "editor", "history" }) do
+    for _, key in ipairs({ "list", "editor", "history", "trusted" }) do
         local frame = CreateFrame("Frame", nil, popup)
         frame:SetPoint("TOPLEFT", 0, -38)
         frame:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -86,6 +89,11 @@ function M:Build(panel, CrossIgnore)
     self:BuildList()
     self:BuildEditor()
     self:BuildHistory()
+    self:BuildTrustedPlayers()
+    self.ChatFilter.OnTrustedPlayersChanged = function()
+        if self.view == "trusted" then self:RefreshTrustedPlayers()
+        elseif self.view == "history" then self:RefreshHistory() end
+    end
     self.ChatFilter.OnRulesChanged = function()
         if not popup:IsShown() then return end
         if self.view == "list" then self:Refresh()
@@ -121,7 +129,8 @@ function M:BuildList()
     W:CreateButton(view, Text("FILTER_RULE_DEFAULTS"), "TOPLEFT", 329, -283, 82, 24, function()
         StaticPopup_Show("CROSSIGNORE_RESTORE_FILTER_RULES")
     end)
-    Label(view, Text("FILTER_RULE_LIST_HINT"), 12, -320, 395, "GameFontDisableSmall")
+    W:CreateButton(view, Text("FILTER_TRUSTED_PLAYERS"), "TOPLEFT", 12, -320, 140, 24, function() self:ShowView("trusted") end)
+    Label(view, Text("FILTER_RULE_LIST_HINT"), 160, -320, 250, "GameFontDisableSmall")
     StaticPopupDialogs["CROSSIGNORE_RESTORE_FILTER_RULES"] = {
         text = Text("FILTER_RULE_DEFAULTS_CONFIRM"), button1 = ACCEPT, button2 = CANCEL,
         OnAccept = function()
@@ -260,6 +269,50 @@ function M:BuildHistory()
     end)
 end
 
+function M:BuildTrustedPlayers()
+    local view = self.views.trusted
+    Label(view, Text("FILTER_TRUST_HINT"), 12, 0, 390, "GameFontHighlightSmall")
+    self.trustedNameBox = W:CreateEditBox(view, 240, 24, "TOPLEFT", 16, -54)
+    W:AttachPlaceholder(self.trustedNameBox, Text(self.CrossIgnore.isForever and "FILTER_TRUST_NAME_FOREVER" or "FILTER_TRUST_NAME"))
+    local function addPlayer()
+        if self.ChatFilter:SetPlayerTrusted(self.trustedNameBox:GetText(), true) then
+            self.trustedNameBox:SetText("")
+            self.trustedNameBox:ClearFocus()
+            self.trustedResult:SetText("")
+        else self.trustedResult:SetText(Text("FILTER_TRUST_INVALID")) end
+    end
+    W:CreateButton(view, Text("FILTER_TRUST_PLAYER"), "TOPLEFT", 266, -54, 140, 24, addPlayer)
+    self.trustedNameBox:SetScript("OnEnterPressed", addPlayer)
+    self.trustedResult = Label(view, "", 12, -84, 390, "GameFontHighlightSmall")
+    self.trustedScroll, self.trustedContent = W:CreateScrollFrame(view, 380, 210, "TOPLEFT", 12, -107)
+    self.trustedEmpty = Label(self.trustedContent, Text("FILTER_TRUST_EMPTY"), 3, -5, 370, "GameFontHighlightSmall")
+    W:CreateButton(view, Text("FILTER_RULE_BACK"), "TOPLEFT", 12, -326, 105, 24, function() self:ShowView("list") end)
+end
+
+function M:RefreshTrustedPlayers()
+    local players = self.ChatFilter:GetTrustedPlayerList()
+    for _, row in ipairs(self.trustedRows) do row:Hide() end
+    self.trustedEmpty:SetShown(#players == 0)
+    for index, name in ipairs(players) do
+        local row = self.trustedRows[index]
+        if not row then
+            row = CreateFrame("Frame", nil, self.trustedContent)
+            row:SetSize(380, 30)
+            row.name = Label(row, "", 3, -7, 235, "GameFontHighlightSmall")
+            row.name:SetWordWrap(false)
+            W:CreateButton(row, Text("FILTER_TRUST_REMOVE"), "TOPRIGHT", -2, -3, 130, 24, function()
+                self.ChatFilter:SetPlayerTrusted(row.playerName, false)
+            end)
+            self.trustedRows[index] = row
+        end
+        row.playerName = name
+        row.name:SetText(name)
+        row:SetPoint("TOPLEFT", 0, -(index - 1) * 30)
+        row:Show()
+    end
+    self.trustedContent:SetHeight(math.max(210, #players * 30))
+end
+
 function M:RefreshHistory()
     local entries = self.ChatFilter:GetBlockHistory(self.historyFilter)
     self.historyTitle:SetText(string.format(Text("FILTER_RULE_HISTORY_DETAIL"), #entries))
@@ -279,6 +332,9 @@ function M:RefreshHistory()
                 GameTooltip:Show()
             end)
             row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            row.trust = W:CreateButton(row, "", "BOTTOMLEFT", 3, 3, 140, 22, function()
+                self.ChatFilter:SetPlayerTrusted(row.entry.sender, not self.ChatFilter:IsPlayerTrusted(row.entry.sender))
+            end)
             self.historyRows[index] = row
         end
         row.entry = entry
@@ -286,7 +342,9 @@ function M:RefreshHistory()
         row.text:SetText(string.format("|cffffd100%s | %s | %s|r\n%s: %s\n%s",
             entry.time or "", entry.chatChannel or entry.channel or "", entry.word or "",
             entry.sender or "", entry.message or "", entry.expression or entry.word or ""))
-        local height = row.text:GetStringHeight() + 14
+        row.trust:SetText(Text(self.ChatFilter:IsPlayerTrusted(entry.sender) and "FILTER_TRUST_REMOVE" or "FILTER_TRUST_PLAYER"))
+        row.trust:SetEnabled(type(entry.sender) == "string" and entry.sender ~= "")
+        local height = row.text:GetStringHeight() + 40
         row:SetHeight(height)
         row:Show()
         y = y + height
