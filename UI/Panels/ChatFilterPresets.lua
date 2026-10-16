@@ -339,10 +339,11 @@ function M:RefreshHistory()
         end
         row.entry = entry
         row:SetPoint("TOPLEFT", 0, -y)
-        row.text:SetText(string.format("|cffffd100%s | %s | %s|r\n%s: %s\n%s",
+        row.text:SetText(string.format("|cffffd100%s | %s | %s|r\n|cff00ccff%s|r\n%s\n%s",
             entry.time or "", entry.chatChannel or entry.channel or "", entry.word or "",
             entry.sender or "", entry.message or "", entry.expression or entry.word or ""))
-        row.trust:SetText(Text(self.ChatFilter:IsPlayerTrusted(entry.sender) and "FILTER_TRUST_REMOVE" or "FILTER_TRUST_PLAYER"))
+        row.trust:SetText(string.format(Text(self.ChatFilter:IsPlayerTrusted(entry.sender) and "FILTER_TRUST_REMOVE_NAME" or "FILTER_TRUST_PLAYER_NAME"), entry.sender or ""))
+        row.trust:SetWidth(math.min(370, math.max(140, row.trust:GetFontString():GetStringWidth() + 24)))
         row.trust:SetEnabled(type(entry.sender) == "string" and entry.sender ~= "")
         local height = row.text:GetStringHeight() + 40
         row:SetHeight(height)
