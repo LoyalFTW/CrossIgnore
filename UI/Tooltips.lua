@@ -8,7 +8,7 @@ function CrossIgnore:ShowBlockedIconOnTooltip()
             if unit and UnitIsPlayer(unit) then
                 local name, realm = UnitName(unit)
                 if name then
-                    addon:CheckTooltipForIgnoredPlayer(tooltip, name, realm)
+                    CrossIgnore:CheckTooltipForIgnoredPlayer(tooltip, name, realm)
                 end
             end
         end)
@@ -18,7 +18,7 @@ function CrossIgnore:ShowBlockedIconOnTooltip()
             if unit and UnitIsPlayer(unit) then
                 local name, realm = UnitName(unit)
                 if name then
-                    addon:CheckTooltipForIgnoredPlayer(tooltip, name, realm)
+                    CrossIgnore:CheckTooltipForIgnoredPlayer(tooltip, name, realm)
                 end
             end
     end)

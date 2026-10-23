@@ -36,8 +36,9 @@ function CrossIgnore:ClearAllIgnoredPlayers()
     self.selectedPlayer = nil
     self.selectedRow = nil
 
-    if CrossIgnoreUI and CrossIgnoreUI.searchBox then
-        self:RefreshBlockedList(CrossIgnoreUI.searchBox:GetText())
+    local ignoreSearchBox = ns.UI.Frames and ns.UI.Frames.ignoreSearchBox
+    if ignoreSearchBox then
+        self:RefreshBlockedList(ignoreSearchBox:GetText())
     else
         self:RefreshBlockedList()
     end
@@ -90,7 +91,7 @@ function CrossIgnore:AddIgnore(name, note, duration)
 
     self:Print(string.format(L["ADD_PLAYER_SUCCESS"] or "Added %s to CrossIgnore.", fullName))
 
-    if CrossIgnoreUI and CrossIgnoreUI:IsShown() then
+    if self:IsMainFrameShown() then
         self:RefreshBlockedList()
     end
 end
@@ -129,7 +130,7 @@ function CrossIgnore:DelIgnore(name)
     end
 
     if removedAny then
-        if CrossIgnoreUI and CrossIgnoreUI:IsShown() then self:RefreshBlockedList() end
+        if self:IsMainFrameShown() then self:RefreshBlockedList() end
     end
 end
 

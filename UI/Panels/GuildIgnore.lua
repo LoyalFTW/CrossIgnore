@@ -228,7 +228,7 @@ function M:RefreshMembers()
                         self.memberRows[i] = row
                 end
                 row.name:SetText(player.name)
-                row.seen:SetText(date("%b %d %H:%M", player.seen))
+                row.seen:SetText(tostring(date("%b %d %H:%M", player.seen)))
                 row:Show()
         end
         for i = #players + 1, #self.memberRows do self.memberRows[i]:Hide() end

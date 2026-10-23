@@ -153,7 +153,8 @@ end
 
 function GuildIgnore:KnownGuild(name)
     local key = PlayerKey(name)
-    local record = key and guildByPlayer[key]
+    if not key then return nil end
+    local record = guildByPlayer[key]
     if not record then return nil end
     if record.seen + self:GetRetentionDays(record.guild) * SECONDS_PER_DAY < time() then
         guildByPlayer[key] = nil
@@ -214,8 +215,8 @@ function GuildIgnore:ObserveGroup()
 end
 
 function GuildIgnore:HarvestWho()
-    local countFunction = C_FriendList and C_FriendList.GetNumWhoResults or GetNumWhoResults
-    local infoFunction = C_FriendList and C_FriendList.GetWhoInfo or GetWhoInfo
+    local countFunction = C_FriendList and C_FriendList.GetNumWhoResults or _G["GetNumWhoResults"]
+    local infoFunction = C_FriendList and C_FriendList.GetWhoInfo or _G["GetWhoInfo"]
     if not countFunction or not infoFunction then return end
     local count = countFunction() or 0
     local foundName, foundGuild
@@ -238,7 +239,7 @@ function GuildIgnore:HarvestWho()
     if pendingWho then
         local name = pendingWho
         pendingWho = nil
-        local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or SetWhoToUI
+        local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or _G["SetWhoToUI"]
         if setWhoToUi then pcall(setWhoToUi, false) end
         if foundName then
             CrossIgnore:Print(string.format(ns.L["GUILD_IGNORE_LOOKUP_FOUND"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_FOUND, foundName, Clean(foundGuild) or (ns.L["GUILD_IGNORE_LOOKUP_NO_GUILD"] or ns.Locales.enUS.GUILD_IGNORE_LOOKUP_NO_GUILD)))
@@ -260,14 +261,14 @@ end
 
 function GuildIgnore:RequestGuildRoster()
     if not IsInGuild or not IsInGuild() then return end
-    local request = C_GuildInfo and C_GuildInfo.GuildRoster or GuildRoster
+    local request = C_GuildInfo and C_GuildInfo.GuildRoster or _G["GuildRoster"]
     if request then pcall(request) end
 end
 
 function GuildIgnore:LookUpPlayer(name)
     name = Clean(name)
-    local sendWho = C_FriendList and C_FriendList.SendWho or SendWho
-    local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or SetWhoToUI
+    local sendWho = C_FriendList and C_FriendList.SendWho or _G["SendWho"]
+    local setWhoToUi = C_FriendList and C_FriendList.SetWhoToUi or _G["SetWhoToUI"]
     if not name or not sendWho or not setWhoToUi then return false end
     if pendingWho then return false, "busy" end
     local routed = pcall(setWhoToUi, true)
@@ -328,7 +329,7 @@ local function ScanBubbles()
         if not next(hiddenBubbles) and bubbleTicker then bubbleTicker:Cancel(); bubbleTicker = nil end
         return
     end
-    local getBubbles = C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles or GetAllChatBubbles
+    local getBubbles = C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles or _G["GetAllChatBubbles"]
     if not getBubbles then return end
     local now = GetTime()
     for text, expires in pairs(pendingBubbles) do
@@ -338,9 +339,10 @@ local function ScanBubbles()
     local seen = {}
     for _, bubble in pairs(bubbles or {}) do
         local frame = bubble.GetChildren and bubble:GetChildren()
-        if frame and frame.String and not (frame.IsForbidden and frame:IsForbidden()) then
+        local fontString = frame and frame["String"]
+        if fontString and not (frame.IsForbidden and frame:IsForbidden()) then
             seen[frame] = true
-            local value = frame.String:GetText()
+            local value = fontString:GetText()
             if Readable(value) and type(value) == "string" then
                 if hiddenBubbles[frame] and hiddenBubbles[frame] ~= value then
                     frame:SetAlpha(1)
@@ -367,7 +369,7 @@ end
 
 function GuildIgnore:HideBubble(event, message)
     if (IsInInstance and IsInInstance()) or (InCombatLockdown and InCombatLockdown()) then return end
-    if not BUBBLE_EVENTS[event] or not Clean(message) or not ((C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles) or GetAllChatBubbles) then return end
+    if not BUBBLE_EVENTS[event] or not Clean(message) or not ((C_ChatBubbles and C_ChatBubbles.GetAllChatBubbles) or _G["GetAllChatBubbles"]) then return end
     pendingBubbles[message] = GetTime() + 1
     if not bubbleTicker then bubbleTicker = C_Timer.NewTicker(0.1, ScanBubbles) end
 end

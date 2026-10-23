@@ -31,7 +31,6 @@ ns.Locales.frFR = {
     CONTEXT_NOT_LOADED   = "Le menu contextuel CrossIgnore n'est pas chargé.",
     WORD_CONTEXT_NOT_LOADED = "Le menu contextuel des mots CrossIgnore n'est pas chargé.",
     REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
-    REMOVE_ALL_BTN = "Remove All",
 
     PLAYER_NAME_HEADER   = "Nom du joueur",
     SERVER_HEADER        = "Serveur",

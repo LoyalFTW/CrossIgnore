@@ -2,19 +2,24 @@ local _, ns = ...
 local CrossIgnore = ns.Addon
 local UI = ns.UI
 
+function CrossIgnore:IsMainFrameShown()
+    local main = UI.Frames and UI.Frames.main
+    return main ~= nil and main:IsShown()
+end
+
 function CrossIgnore:ToggleGUI()
-        if CrossIgnoreUI and CrossIgnoreUI:IsShown() then
-                CrossIgnoreUI:Hide()
+        if self:IsMainFrameShown() then
+                UI.Frames.main:Hide()
         else
-                if not CrossIgnoreUI then self:CreateUI() end
+                if not UI.Frames.main then self:CreateUI() end
                 self:UpdateIgnoreList()
                 self:CheckExpiredIgnores()
-                CrossIgnoreUI:Show()
+                UI.Frames.main:Show()
         end
 end
 
 function CrossIgnore:CreateUI()
-    local CrossIgnoreDB = _G.CrossIgnoreDB
+    local CrossIgnoreDB = self.globalDB.sv
     UI:BuildMainFrame(self, CrossIgnoreDB)
 
     local panels = UI.Frames.panels

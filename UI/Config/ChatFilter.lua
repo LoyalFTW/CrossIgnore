@@ -4,14 +4,14 @@ local L = ns.L
 
 function CrossIgnore:CreateChatFilterDebugMenu(parent)
     local ChatFilter = CrossIgnore.ChatFilter
-    ChatFilter.IsFilteredMessage = ChatFilter.IsFilteredMessage or IsFilteredMessage
+    local refreshLeftPanel, refreshRightPanel
 
     local panelWidth, panelHeight = 140, 220
     local leftPanelWidth = panelWidth
     local rightPanelWidth = 280
     local selectedWord, selectedWordChannel = nil, nil
     local leftSearchText = ""
-    local filterChannel = CrossIgnoreDB.selectedChannel or L["CHANNEL_ALL"]
+    local filterChannel = CrossIgnore.globalDB.sv.selectedChannel or L["CHANNEL_ALL"]
 
     local blockedMessages = {}
 
@@ -58,7 +58,7 @@ function CrossIgnore:CreateChatFilterDebugMenu(parent)
                         return filterChannel == value
                     end, function(value)
                         filterChannel = value
-                        CrossIgnoreDB.selectedChannel = value
+                        CrossIgnore.globalDB.sv.selectedChannel = value
                         refreshLeftPanel()
                     end, channel)
                 end
@@ -72,7 +72,7 @@ function CrossIgnore:CreateChatFilterDebugMenu(parent)
 
         local function OnClick(self)
             filterChannel = self.value
-            CrossIgnoreDB.selectedChannel = self.value
+            CrossIgnore.globalDB.sv.selectedChannel = self.value
             UIDropDownMenu_SetSelectedValue(dropdown, self.value)
             UIDropDownMenu_SetText(dropdown, self.value)
             refreshLeftPanel()
@@ -153,7 +153,7 @@ function CrossIgnore:CreateChatFilterDebugMenu(parent)
         refreshRightPanel()
     end)
 
-    function refreshLeftPanel()
+    refreshLeftPanel = function()
         for _, child in ipairs(leftContent.children) do
             child:Hide()
             child:SetParent(nil)
@@ -233,7 +233,7 @@ function CrossIgnore:CreateChatFilterDebugMenu(parent)
         leftContent:SetHeight(math.max(panelHeight, -y))
     end
 
-    function refreshRightPanel()
+    refreshRightPanel = function()
     for _, child in ipairs(rightContent.children) do
         child:Hide()
         child:SetParent(nil)
@@ -397,6 +397,7 @@ end
         testBox:ClearFocus()
     end)
 
+    CrossIgnore.RefreshChatFilterDebugWords = refreshLeftPanel
     refreshLeftPanel()
     refreshRightPanel()
 end

@@ -25,7 +25,7 @@ local channelCache = {}
 
 function ChatFilter:GetTrustedPlayers()
     self:GetFilters()
-    local filters = CrossIgnoreDB.global.filters
+    local filters = CrossIgnore.globalDB.global.filters
     if type(filters.trustedPlayers) ~= "table" then filters.trustedPlayers = {} end
     return filters.trustedPlayers
 end
@@ -139,20 +139,20 @@ local function GetChannelCategory(event, ...)
 end
 
 function ChatFilter:GetFilters()
-    if not CrossIgnoreDB then return {} end
-    CrossIgnoreDB.global = CrossIgnoreDB.global or {}
-    CrossIgnoreDB.global.filters = CrossIgnoreDB.global.filters or {}
-    CrossIgnoreDB.global.filters.words = CrossIgnoreDB.global.filters.words or {}
-    CrossIgnoreDB.global.filters.words["all channels"] =
-        CrossIgnoreDB.global.filters.words["all channels"] or {}
+    if not CrossIgnore.globalDB then return {} end
+    CrossIgnore.globalDB.global = CrossIgnore.globalDB.global or {}
+    CrossIgnore.globalDB.global.filters = CrossIgnore.globalDB.global.filters or {}
+    CrossIgnore.globalDB.global.filters.words = CrossIgnore.globalDB.global.filters.words or {}
+    CrossIgnore.globalDB.global.filters.words["all channels"] =
+        CrossIgnore.globalDB.global.filters.words["all channels"] or {}
 
-    for key, list in pairs(CrossIgnoreDB.global.filters.words) do
+    for key, list in pairs(CrossIgnore.globalDB.global.filters.words) do
         if type(list) ~= "table" then
-            CrossIgnoreDB.global.filters.words[key] = {}
+            CrossIgnore.globalDB.global.filters.words[key] = {}
         end
     end
 
-    return CrossIgnoreDB.global.filters.words
+    return CrossIgnore.globalDB.global.filters.words
 end
 
 local function EscapeForPattern(text)
@@ -328,12 +328,12 @@ local countedMessageIndex = 1
 local lastUnidentifiedMessage
 
 function ChatFilter:GetFilteredMessageCounts()
-    local filters = CrossIgnoreDB and CrossIgnoreDB.global and CrossIgnoreDB.global.filters
+    local filters = CrossIgnore.globalDB and CrossIgnore.globalDB.global and CrossIgnore.globalDB.global.filters
     return sessionFilteredMessages, filters and filters.totalFilteredMessages or 0
 end
 
 local function CountFilteredMessage(chatFrame, event, msg, sender, lineID, channel)
-    if not CrossIgnoreDB then return end
+    if not CrossIgnore.globalDB then return end
 
     if (type(lineID) == "number" and lineID > 0) or (type(lineID) == "string" and lineID ~= "") then
         local key = event .. ":" .. tostring(lineID)
@@ -360,7 +360,7 @@ local function CountFilteredMessage(chatFrame, event, msg, sender, lineID, chann
     end
 
     ChatFilter:GetFilters()
-    local filters = CrossIgnoreDB.global.filters
+    local filters = CrossIgnore.globalDB.global.filters
     filters.totalFilteredMessages = (filters.totalFilteredMessages or 0) + 1
     sessionFilteredMessages = sessionFilteredMessages + 1
     if ChatFilter.OnFilteredMessageCountChanged then

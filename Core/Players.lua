@@ -47,8 +47,9 @@ function CrossIgnore:RefreshKnownRealms()
     addRealm(GetNormalizedRealmName and GetNormalizedRealmName() or nil)
     addRealm(GetRealmName and GetRealmName() or nil)
 
-    if type(GetAutoCompleteRealms) == "function" then
-        local ok, result1, result2, result3, result4, result5, result6, result7, result8 = pcall(GetAutoCompleteRealms)
+    local getAutoCompleteRealms = (C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms) or _G["GetAutoCompleteRealms"]
+    if type(getAutoCompleteRealms) == "function" then
+        local ok, result1, result2, result3, result4, result5, result6, result7, result8 = pcall(getAutoCompleteRealms)
         if ok then
             if type(result1) == "table" then
                 for _, realm in ipairs(result1) do

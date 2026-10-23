@@ -46,9 +46,9 @@ ChatFilter.presets = {
 }
 
 function ChatFilter:GetRuleStore()
-    if not CrossIgnoreDB then return { rules = {}, counts = {}, history = {} } end
+    if not ns.Addon.globalDB then return { rules = {}, counts = {}, history = {} } end
     self:GetFilters()
-    local filters = CrossIgnoreDB.global.filters
+    local filters = ns.Addon.globalDB.global.filters
     filters.ruleStore = filters.ruleStore or { rules = {}, counts = {}, history = {}, nextID = 1 }
     local store = filters.ruleStore
     store.rules = store.rules or {}
@@ -99,7 +99,7 @@ function ChatFilter:SetPresetEnabled(id, enabled)
     local rule = self:GetRuleStore().rules[id]
     if not rule or rule.deleted then return end
     rule.enabled = enabled and true or false
-    CrossIgnoreDB.global.filters.presets[id] = rule.enabled
+    ns.Addon.globalDB.global.filters.presets[id] = rule.enabled
     self:UpdateEventRegistration()
     if self.OnRulesChanged then self.OnRulesChanged() end
 end
@@ -123,7 +123,7 @@ function ChatFilter:SaveRule(id, name, expression, enabled)
         return nil, "Filter not found."
     end
     store.rules[id] = { id = id, name = name:sub(1, 120), expression = expression, enabled = enabled and true or false }
-    CrossIgnoreDB.global.filters.presets[id] = enabled and true or false
+    ns.Addon.globalDB.global.filters.presets[id] = enabled and true or false
     self:UpdateEventRegistration()
     if self.OnRulesChanged then self.OnRulesChanged() end
     return id
@@ -136,14 +136,14 @@ function ChatFilter:RemoveRule(id)
         if preset.id == id then
             store.rules[id].deleted = true
             store.rules[id].enabled = false
-            CrossIgnoreDB.global.filters.presets[id] = false
+            ns.Addon.globalDB.global.filters.presets[id] = false
             self:UpdateEventRegistration()
             if self.OnRulesChanged then self.OnRulesChanged() end
             return
         end
     end
     store.rules[id] = nil
-    CrossIgnoreDB.global.filters.presets[id] = nil
+    ns.Addon.globalDB.global.filters.presets[id] = nil
     self:UpdateEventRegistration()
     if self.OnRulesChanged then self.OnRulesChanged() end
 end

@@ -67,7 +67,6 @@ ns.Locales.enUS = {
     CONTEXT_NOT_LOADED   = "CrossIgnore context menu not loaded.",
     WORD_CONTEXT_NOT_LOADED = "CrossIgnore word context menu not loaded.",
     REMOVE_ALL_PLAYERS_CONFIRM = "Are you sure you want to remove ALL ignored players?\n\nThis cannot be undone.",
-    REMOVE_ALL_BTN = "Remove All",
 
     PLAYER_NAME_HEADER   = "Player Name",
     FOREVER_FIRST_NAME   = "First Name",

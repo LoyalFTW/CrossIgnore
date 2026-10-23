@@ -31,7 +31,6 @@ ns.Locales.ruRU = {
     CONTEXT_NOT_LOADED   = "Контекстное меню CrossIgnore не загружено.",
     WORD_CONTEXT_NOT_LOADED = "Слова контекстного меню CrossIgnore не загружены.",
     REMOVE_ALL_PLAYERS_CONFIRM = "Вы уверены, что хотите удалить ВСЕХ игнорируемых игроков?\n\nЭто действие нельзя отменить.",
-    REMOVE_ALL_BTN = "Удалить все",
 
     PLAYER_NAME_HEADER   = "Имя игрока",
     SERVER_HEADER        = "Сервер",

@@ -26,14 +26,6 @@ function CrossIgnore:OnInitialize()
     self:RegisterEvent("IGNORELIST_UPDATE", "DelayedUpdateIgnoreList")
     if self.isForever then self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin") end
 
-    if LFGListFrame and LFGListFrame.SearchPanel then
-        LFGListFrame:HookScript("OnHide", function()
-            if LfgCache then
-                for k in pairs(LfgCache) do LfgCache[k] = nil end
-            end
-        end)
-    end
-
     self:HookFunctions()
 end
 

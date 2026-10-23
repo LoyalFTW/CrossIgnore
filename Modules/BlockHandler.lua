@@ -151,11 +151,12 @@ whisperFrame:SetScript("OnEvent", function(_, event, msg, sender, ...)
         local replyMsg = CrossIgnore.charDB.profile.settings.autoReplyMessage
 
         if event == "CHAT_MSG_WHISPER" then
-            SendChatMessage(replyMsg, "WHISPER", nil, sender)
+            C_ChatInfo.SendChatMessage(replyMsg, "WHISPER", nil, sender)
         elseif event == "CHAT_MSG_BN_WHISPER" then
             local bnetIDAccount = select(13, ...)
             if bnetIDAccount then
-                BNSendWhisper(bnetIDAccount, replyMsg)
+                local sendWhisper = (C_BattleNet and C_BattleNet.SendWhisper) or _G["BNSendWhisper"]
+                sendWhisper(bnetIDAccount, replyMsg)
             end
         end
     end

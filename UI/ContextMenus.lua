@@ -4,6 +4,11 @@ local L = ns.L
 
 local CrossIgnoreMenuFrame
 
+function CrossIgnore:GetWordSearchText()
+    local searchBox = ns.UI.Frames and ns.UI.Frames.wordSearchBox
+    return searchBox and searchBox:GetText() or ""
+end
+
 local function ShowStyledDropdown(items, anchorFrame)
     if MenuUtil and MenuUtil.CreateContextMenu then
         MenuUtil.CreateContextMenu(anchorFrame, function(_, rootDescription)
@@ -172,14 +177,12 @@ function CrossIgnore:ShowEditWordPopup(entry)
             local channelName = entry.channelName or entry.channel
             local wordIndex = entry.wordIndex
 
-            if CrossIgnoreDB
-                and CrossIgnoreDB.global
-                and CrossIgnoreDB.global.filters
-                and CrossIgnoreDB.global.filters.words
-                and CrossIgnoreDB.global.filters.words[channelName]
-                and CrossIgnoreDB.global.filters.words[channelName][wordIndex]
+            local words = self.globalDB and self.globalDB.global.filters and self.globalDB.global.filters.words
+            if words
+                and words[channelName]
+                and words[channelName][wordIndex]
             then
-                CrossIgnoreDB.global.filters.words[channelName][wordIndex] = {
+                words[channelName][wordIndex] = {
                     word = newWord,
                     normalized = newWord:lower(),
                 }
@@ -188,7 +191,7 @@ function CrossIgnore:ShowEditWordPopup(entry)
             entry.word = newWord
             entry.normalized = newWord:lower()
 
-            self:UpdateWordsList(_G.CrossIgnoreUI.searchBox:GetText() or "")
+            self:UpdateWordsList(self:GetWordSearchText())
         end
     )
 
@@ -228,6 +231,6 @@ function CrossIgnore:RemoveSelectedWord(entry)
         self.ChatFilter:RemoveWord(word, channel)
     end
 
-    self:UpdateWordsList(_G.CrossIgnoreUI and _G.CrossIgnoreUI.searchBox:GetText() or "")
-    if refreshLeftPanel then refreshLeftPanel() end
+    self:UpdateWordsList(self:GetWordSearchText())
+    if self.RefreshChatFilterDebugWords then self.RefreshChatFilterDebugWords() end
 end

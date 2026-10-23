@@ -32,11 +32,8 @@ function CrossIgnore:CreateOptionsUI(parent)
 
     lfgCheckbox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["AUTOMATICALLY_BLOCK_LEADER_OF_THE_GROUP"], 1, 1, 1, true)
+        GameTooltip:SetText(L["AUTOMATICALLY_BLOCK_LEADER_OF_THE_GROUP"], 1, 1, 1, 1, true)
         GameTooltip:SetClampedToScreen(true)
-        if GameTooltip.SetMaximumWidth then
-            GameTooltip:SetMaximumWidth(320)
-        end
         GameTooltip:Show()
     end)
 

@@ -79,9 +79,9 @@ function CrossIgnore:CreateEIOptions(parent)
             end)
 
             if success and filters then
-                CrossIgnoreDB.global = CrossIgnoreDB.global or {}
-                CrossIgnoreDB.global.filters = CrossIgnoreDB.global.filters or {}
-                CrossIgnoreDB.global.filters.words = filters
+                local globalData = CrossIgnore.globalDB.global
+                globalData.filters = globalData.filters or {}
+                globalData.filters.words = filters
 
                 if CrossIgnore.ChatFilter and CrossIgnore.ChatFilter.UpdateWordsList then
                     CrossIgnore.ChatFilter:UpdateWordsList()

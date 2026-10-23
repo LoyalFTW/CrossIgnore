@@ -5,6 +5,9 @@ local Core = ns.CoreInternals
 local StripRealm = Core.StripRealm
 local MakeKey = Core.MakeKey
 
+local REMOVE_TTL_SECONDS = 30 * 86400
+local PURGE_BATCH_SIZE = 50
+
 function CrossIgnore:DelayedUpdateIgnoreList()
     if self.updateScheduled then return end
     self.updateScheduled = true
@@ -15,24 +18,25 @@ function CrossIgnore:DelayedUpdateIgnoreList()
 end
 
 function CrossIgnore:StartPurgeRemovedIgnores()
-    if not CrossIgnoreDB or not CrossIgnoreDB.players then return end
+    local savedData = self.globalDB and self.globalDB.sv
+    if not savedData or not savedData.players then return end
     if self._purgeTicker then return end
 
     local now = time()
     local cutoff = now - REMOVE_TTL_SECONDS
-    local index = #CrossIgnoreDB.players
+    local index = #savedData.players
 
     self._purgeTicker = C_Timer.NewTicker(0.02, function()
         local removed = 0
 
         while index > 0 and removed < PURGE_BATCH_SIZE do
-            local entry = CrossIgnoreDB.players[index]
+            local entry = savedData.players[index]
 
             if entry
                and entry.markedAt
                and entry.markedAt <= cutoff
             then
-                table.remove(CrossIgnoreDB.players, index)
+                table.remove(savedData.players, index)
                 removed = removed + 1
             end
 
