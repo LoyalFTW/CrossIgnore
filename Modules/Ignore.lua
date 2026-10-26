@@ -142,7 +142,7 @@ function CrossIgnore:AddOrDelIgnore(name)
     end
     self:RefreshBlockedList()
 
-    if LFGListFrame and LFGListFrame.SearchPanel and LFGListFrame.SearchPanel:IsShown() then
+    if LFGListSearchPanel_UpdateResults and LFGListFrame and LFGListFrame.SearchPanel and LFGListFrame.SearchPanel:IsShown() then
         LFGListSearchPanel_UpdateResults(LFGListFrame.SearchPanel)
     end
 end

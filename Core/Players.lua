@@ -47,23 +47,11 @@ function CrossIgnore:RefreshKnownRealms()
     addRealm(GetNormalizedRealmName and GetNormalizedRealmName() or nil)
     addRealm(GetRealmName and GetRealmName() or nil)
 
-    local getAutoCompleteRealms = (C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms) or _G["GetAutoCompleteRealms"]
-    if type(getAutoCompleteRealms) == "function" then
-        local ok, result1, result2, result3, result4, result5, result6, result7, result8 = pcall(getAutoCompleteRealms)
-        if ok then
-            if type(result1) == "table" then
-                for _, realm in ipairs(result1) do
-                    addRealm(realm)
-                end
-            else
-                addRealm(result1)
-                addRealm(result2)
-                addRealm(result3)
-                addRealm(result4)
-                addRealm(result5)
-                addRealm(result6)
-                addRealm(result7)
-                addRealm(result8)
+    if C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms then
+        local ok, realmNames = pcall(C_AutoComplete.GetAutoCompleteRealms)
+        if ok and type(realmNames) == "table" then
+            for _, realm in ipairs(realmNames) do
+                addRealm(realm)
             end
         end
     end
@@ -125,6 +113,18 @@ function CrossIgnore:GetUnitPlayerName(unit)
         return firstName .. " " .. secondName
     end
     return firstName, secondName
+end
+
+function CrossIgnore:GetTooltipUnit(tooltip)
+    if TooltipUtil and TooltipUtil.GetDisplayedUnit then
+        local _, unit = TooltipUtil.GetDisplayedUnit(tooltip)
+        return unit
+    end
+    if tooltip and tooltip.GetUnit then
+        local _, unit = tooltip:GetUnit()
+        return unit
+    end
+    return nil
 end
 
 function CrossIgnore:GetCurrentCharacterKey()

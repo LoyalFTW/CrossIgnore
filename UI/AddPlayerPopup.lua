@@ -70,27 +70,6 @@ local function CollectRealmNames(activeAddon)
         end
     end
 
-    local getAutoCompleteRealms = (C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms) or _G["GetAutoCompleteRealms"]
-    if type(getAutoCompleteRealms) == "function" then
-        local ok, result1, result2, result3, result4, result5, result6, result7, result8 = pcall(getAutoCompleteRealms)
-        if ok then
-            if type(result1) == "table" then
-                for _, realm in ipairs(result1) do
-                    addRealm(realm)
-                end
-            else
-                addRealm(result1)
-                addRealm(result2)
-                addRealm(result3)
-                addRealm(result4)
-                addRealm(result5)
-                addRealm(result6)
-                addRealm(result7)
-                addRealm(result8)
-            end
-        end
-    end
-
     local function addFromList(list)
         for _, entry in ipairs(list or {}) do
             addRealm(entry and (entry.server or entry.realm))

@@ -419,12 +419,12 @@ function GuildIgnore:Initialize()
     end
     if TooltipDataProcessor and Enum and Enum.TooltipDataType and Enum.TooltipDataType.Unit then
         TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, function(tooltip)
-            local _, unit = tooltip:GetUnit()
+            local unit = CrossIgnore:GetTooltipUnit(tooltip)
             if Readable(unit) and unit then self:ObserveUnit(unit) end
         end)
     elseif GameTooltip then
         GameTooltip:HookScript("OnTooltipSetUnit", function(tooltip)
-            local _, unit = tooltip:GetUnit()
+            local unit = CrossIgnore:GetTooltipUnit(tooltip)
             if Readable(unit) and unit then self:ObserveUnit(unit) end
         end)
     end
