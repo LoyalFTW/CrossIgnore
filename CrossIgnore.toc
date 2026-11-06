@@ -13,6 +13,7 @@
 ## IconTexture: Interface\AddOns\CrossIgnore\Media\icon
 ## X-Curse-Project-ID: 1290810
 ## X-Wago-ID: ZKbeW461
+## Category: CrossIgnore
 ## Category-enUS: CrossIgnore
 ## Category-deDE: CrossIgnorieren
 ## Category-esES: CrossIgnorar
