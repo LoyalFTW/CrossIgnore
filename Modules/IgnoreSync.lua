@@ -66,7 +66,7 @@ function CrossIgnore:GetAddonIgnoreSet()
     local addonSet = {}
     for _, player in ipairs(self.charDB.profile.players) do
         if player.name and player.server then
-            addonSet[MakeKey(player.name, player.server)] = true
+            addonSet[MakeKey(player.name, player.server):lower()] = true
         end
     end
     return addonSet
@@ -75,27 +75,28 @@ end
 function CrossIgnore:UpdateIgnoreList()
     local blizzSet = self:GetBlizzardIgnoreSet()
     local addonSet = self:GetAddonIgnoreSet()
-    local changed = false
-
-    for blizzName in pairs(blizzSet) do
-        if not addonSet[blizzName] then changed = true break end
-    end
-    if not changed then
-        for addonName in pairs(addonSet) do
-            if not blizzSet[addonName] then changed = true break end
-        end
-    end
-
-    if not changed then
-        self:SyncLocalToGlobal()
-        self:RefreshBlockedList()
-        return
-    end
-
     local list = self.charDB.profile.players
+    local overflow = self.charDB.profile.overLimitPlayers
+    local overflowByName = {}
+    for _, entry in ipairs(overflow) do
+        local name = self:GetStoredIgnoreName(entry)
+        if name then overflowByName[name:lower()] = entry end
+    end
 
     for blizzName in pairs(blizzSet) do
-        if not addonSet[blizzName] then
+        local key = blizzName:lower()
+        local entry = overflowByName[key]
+        if not addonSet[key] and entry then
+            for index, existing in ipairs(overflow) do
+                if existing == entry then
+                    table.remove(overflow, index)
+                    break
+                end
+            end
+            entry.source = "blizzard"
+            table.insert(list, entry)
+            addonSet[key] = true
+        elseif not addonSet[key] then
             local _, base, realm = self:NormalizePlayerName(blizzName)
 
             local existingNote, existingExpires = "", 0
@@ -141,6 +142,7 @@ function CrossIgnore:UpdateIgnoreList()
             }
 
             table.insert(list, entry)
+            addonSet[key] = true
 
             self:EnsureGlobalPresence(entry, self.charDB.profile.settings.maxIgnoreLimit or 50)
         end

@@ -37,6 +37,21 @@ function CrossIgnore:ClearAllIgnoredPlayers()
     end
 end
 
+function CrossIgnore:TryAddBlizzardIgnore(fullName, limit)
+    if C_FriendList.IsIgnored(fullName) then return true end
+    if C_FriendList.GetNumIgnores() >= limit then return false end
+    local ok, added = pcall(C_FriendList.AddIgnore, fullName)
+    return ok and (added == true or C_FriendList.IsIgnored(fullName)) or false
+end
+
+function CrossIgnore:StoreLocalIgnore(entry, blizzard)
+    entry.source = blizzard and "blizzard" or "addon"
+    local profile = self.charDB.profile
+    local list = blizzard and profile.players or profile.overLimitPlayers
+    table.insert(list, CopyEntry(entry))
+    self:EnsureGlobalPresence(entry, profile.settings.maxIgnoreLimit or 50)
+end
+
 function CrossIgnore:AddIgnore(name, note, duration)
     local fullName, base, realm = self:NormalizePlayerName(name)
     if not base or realm == nil then
@@ -46,8 +61,6 @@ function CrossIgnore:AddIgnore(name, note, duration)
     end
 
     if self:IsPlayerInAnyList(base, realm) then return end
-
-    local maxIgnoreLimit = self.charDB.profile.settings.maxIgnoreLimit or 50
 
     local dur = tonumber(duration)
     if not dur then
@@ -64,23 +77,14 @@ function CrossIgnore:AddIgnore(name, note, duration)
         lastName   = self.isForever and base:match("^%S+%s+(%S+)$") or nil,
         added      = time(),
         ignored    = true,
-        source     = "blizzard",
         type       = "player",
         note       = note or "",
         expires    = expiresAt,
         addedBy    = self:GetCurrentCharacterKey(),
     }
 
-    if #self.charDB.profile.players < maxIgnoreLimit then
-        C_FriendList.AddIgnore(fullName)
-        entry.source = "blizzard"
-        table.insert(self.charDB.profile.players, CopyEntry(entry))
-    else
-        entry.source = "addon"
-        table.insert(self.charDB.profile.overLimitPlayers, CopyEntry(entry))
-    end
-
-    self:EnsureGlobalPresence(entry, maxIgnoreLimit)
+    local limit = self.charDB.profile.settings.maxIgnoreLimit or 50
+    self:StoreLocalIgnore(entry, self:TryAddBlizzardIgnore(fullName, limit))
 
     self:Print(string.format(L["ADD_PLAYER_SUCCESS"] or "Added %s to CrossIgnore.", fullName))
 
@@ -114,8 +118,9 @@ function CrossIgnore:AddOrDelIgnore(name)
     end
     self:RefreshBlockedList()
 
-    if LFGListSearchPanel_UpdateResults and LFGListFrame and LFGListFrame.SearchPanel and LFGListFrame.SearchPanel:IsShown() then
-        LFGListSearchPanel_UpdateResults(LFGListFrame.SearchPanel)
+    if not self.isForever and LFGListFrame and LFGListFrame.SearchPanel and LFGListFrame.SearchPanel:IsShown() then
+        local updateResults = _G["LFGListSearchPanel_UpdateResults"]
+        if updateResults then updateResults(LFGListFrame.SearchPanel) end
     end
 end
 

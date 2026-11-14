@@ -104,7 +104,7 @@ function ChatFilter:SetPresetEnabled(id, enabled)
     if self.OnRulesChanged then self.OnRulesChanged() end
 end
 
-function ChatFilter:SaveRule(id, name, expression, enabled)
+function ChatFilter:SaveRule(id, name, expression, enabled, deferRefresh)
     name = type(name) == "string" and name:match("^%s*(.-)%s*$") or ""
     if name == "" then return nil, "Enter a filter name." end
     local compiled, err = self:CompileRule(expression)
@@ -124,8 +124,10 @@ function ChatFilter:SaveRule(id, name, expression, enabled)
     end
     store.rules[id] = { id = id, name = name:sub(1, 120), expression = expression, enabled = enabled and true or false }
     ns.Addon.globalDB.global.filters.presets[id] = enabled and true or false
-    self:UpdateEventRegistration()
-    if self.OnRulesChanged then self.OnRulesChanged() end
+    if not deferRefresh then
+        self:UpdateEventRegistration()
+        if self.OnRulesChanged then self.OnRulesChanged() end
+    end
     return id
 end
 

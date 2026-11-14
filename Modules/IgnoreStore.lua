@@ -22,8 +22,10 @@ end
 
 local function ListHas(list, base, realm)
     if not list then return false end
+    local name = MakeKey(base, realm)
     for _, p in ipairs(list) do
-        if p.name == base and p.server == realm then return true end
+        local existing = MakeKey(p.name, p.server)
+        if existing and strcmputf8i(existing, name) == 0 then return true end
     end
     return false
 end
@@ -47,7 +49,8 @@ function CrossIgnore:EnsureGlobalPresence(entry, maxIgnoreLimit)
 
     local function updateIfFound(list)
         for _, p in ipairs(list) do
-            if MakeKey(p.name, p.server) == key then
+            local existing = MakeKey(p.name, p.server)
+            if existing and key and strcmputf8i(existing, key) == 0 then
                 if entry.note ~= p.note then
                     if (entry.lastModifiedNote or 0) > (p.lastModifiedNote or 0) then
                         p.note = entry.note
