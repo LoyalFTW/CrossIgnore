@@ -136,12 +136,11 @@ function M:Build(panel, CrossIgnore)
 
     local function RemoveSelectedPlayer()
         local p = UI.State.selectedPlayer or CrossIgnore.selectedPlayer
-        if not p or not p.name then
+        local fullName = p and CrossIgnore:GetStoredIgnoreName(p)
+        if not fullName then
             print(L["NO_PLAYER_SELECTED"])
             return
         end
-        local combined = p.name .. (p.server and p.server ~= "" and ("-" .. p.server) or "")
-        local fullName = CrossIgnore:NormalizePlayerName(combined)
         CrossIgnore:DelIgnore(fullName)
 
         UI.State.selectedPlayer = nil

@@ -116,12 +116,24 @@ function CrossIgnore:SyncLocalToGlobal()
     end
 end
 
-function CrossIgnore:RemoveFromAllAddonLists(base, realm)
+function CrossIgnore:GetStoredIgnoreName(entry)
+    if self.isForever then
+        local fullName = self:NormalizePlayerName(entry.name)
+        if not fullName and entry.firstName and entry.lastName then
+            fullName = self:NormalizePlayerName(entry.firstName .. " " .. entry.lastName)
+        end
+        return fullName
+    end
+    return self:NormalizePlayerName(MakeKey(entry.name, entry.server or entry.realm))
+end
+
+function CrossIgnore:RemoveFromAllAddonLists(fullName, base, realm)
     local function removeFromList(list)
         local removed = false
         for i = #list, 1, -1 do
             local p = list[i]
-            if p.name == base and p.server == realm then
+            local storedName = self:GetStoredIgnoreName(p)
+            if storedName and strcmputf8i(storedName, fullName) == 0 then
                 if self.maybeMarkPendingRemoval then self:maybeMarkPendingRemoval(base, realm, p.addedBy) end
                 table.remove(list, i)
                 removed = true

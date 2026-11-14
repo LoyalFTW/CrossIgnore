@@ -2,7 +2,6 @@ local addonName, ns = ...
 local CrossIgnore = ns.Addon
 
 local Core = ns.CoreInternals
-local StripRealm = Core.StripRealm
 local MakeKey = Core.MakeKey
 
 local REMOVE_TTL_SECONDS = 30 * 86400
@@ -97,12 +96,7 @@ function CrossIgnore:UpdateIgnoreList()
 
     for blizzName in pairs(blizzSet) do
         if not addonSet[blizzName] then
-            local base, realm
-            if self.isForever then
-                base, realm = blizzName, ""
-            else
-                base, realm = strsplit("-", blizzName)
-            end
+            local _, base, realm = self:NormalizePlayerName(blizzName)
 
             local existingNote, existingExpires = "", 0
 
@@ -156,6 +150,21 @@ function CrossIgnore:UpdateIgnoreList()
     self:RefreshBlockedList()
 end
 
+function CrossIgnore:RemoveIgnoredPlayer(name)
+    local fullName, base, realm = self:NormalizePlayerName(name)
+    if not fullName then return false end
+
+    local removed = self:RemoveFromAllAddonLists(fullName, base, realm)
+    for i = 1, C_FriendList.GetNumIgnores() do
+        local listedName = self:NormalizePlayerName(C_FriendList.GetIgnoreName(i))
+        if listedName and strcmputf8i(listedName, fullName) == 0 then
+            C_FriendList.DelIgnoreByIndex(i)
+            return true
+        end
+    end
+    return removed
+end
+
 function CrossIgnore:ProcessPendingRemovals()
     local myChar = self:GetCurrentCharacterKey()
     if not myChar then return end
@@ -163,15 +172,7 @@ function CrossIgnore:ProcessPendingRemovals()
         for i = #pendingList, 1, -1 do
             local rem = pendingList[i]
             if rem.addedBy == myChar then
-                self:RemoveFromAllAddonLists(rem.name, rem.server)
-                for j = 1, C_FriendList.GetNumIgnores() do
-                    local nameOnList = C_FriendList.GetIgnoreName(j)
-                    local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
-                    if nameOnList and ((listedName == rem.name and listedRealm == rem.server) or (not self.isForever and StripRealm(nameOnList) == rem.name)) then
-                        C_FriendList.DelIgnore(nameOnList)
-                        break
-                    end
-                end
+                self:RemoveIgnoredPlayer(self:GetStoredIgnoreName(rem))
                 table.remove(pendingList, i)
             end
         end
@@ -186,10 +187,10 @@ function CrossIgnore:CheckExpiredIgnores()
     local function CollectExpired(list)
         for _, entry in ipairs(list) do
             if entry.expires and entry.expires > 0 and entry.expires <= now then
-                local key = MakeKey(entry.name, entry.server)
-                if key and not seen[key] then
-                    seen[key] = true
-                    expired[#expired + 1] = { name = entry.name, server = entry.server }
+                local fullName = self:GetStoredIgnoreName(entry)
+                if fullName and not seen[fullName] then
+                    seen[fullName] = true
+                    expired[#expired + 1] = fullName
                 end
             end
         end
@@ -200,17 +201,8 @@ function CrossIgnore:CheckExpiredIgnores()
     CollectExpired(globalPlayers)
     CollectExpired(globalOverLimitPlayers)
 
-    for _, entry in ipairs(expired) do
-        local base, realm = entry.name, entry.server
-        self:RemoveFromAllAddonLists(base, realm)
-        for j = 1, C_FriendList.GetNumIgnores() do
-            local nameOnList = C_FriendList.GetIgnoreName(j)
-            local _, listedName, listedRealm = self:NormalizePlayerName(nameOnList)
-            if nameOnList and ((listedName == base and listedRealm == realm) or (not self.isForever and StripRealm(nameOnList) == base)) then
-                C_FriendList.DelIgnore(nameOnList)
-                break
-            end
-        end
+    for _, fullName in ipairs(expired) do
+        self:RemoveIgnoredPlayer(fullName)
     end
     if #expired > 0 then self:RefreshBlockedList() end
 end

@@ -3,7 +3,6 @@ local CrossIgnore = ns.Addon
 
 local currentRealm = not CrossIgnore.isForever and GetNormalizedRealmName() or nil
 
-local function StripRealm(name) return (name and name:match("^[^%-]+")) or name end
 local function MakeKey(base, realm) if not base or realm == nil then return nil end return realm ~= "" and (base .. "-" .. realm) or base end
 local function ToSafeString(value)
     if value == nil or (canaccessvalue and not canaccessvalue(value)) then
@@ -87,9 +86,16 @@ function CrossIgnore:NormalizePlayerName(name)
         return fullName, fullName, ""
     end
 
-    local base, realm = strsplit("-", safeName)
-    if not base or base == "" then return nil, nil, nil end
-    realm = realm or currentRealm or GetNormalizedRealmName() or "Unknown"
+    local base, realm = safeName:match("^([^%-]*)%-(.*)$")
+    if realm then
+        realm = NormalizeRealmToken(realm)
+        if not realm then return nil, nil, nil end
+    else
+        base = safeName
+        realm = currentRealm or GetNormalizedRealmName() or "Unknown"
+    end
+    base = strtrim(base)
+    if base == "" then return nil, nil, nil end
     return base .. "-" .. realm, base, realm
 end
 
@@ -135,7 +141,6 @@ function CrossIgnore:GetCurrentCharacterKey()
     return realm and name .. "-" .. realm or nil
 end
 
-ns.CoreInternals.StripRealm = StripRealm
 ns.CoreInternals.MakeKey = MakeKey
 ns.CoreInternals.ToSafeString = ToSafeString
 ns.CoreInternals.NormalizeRealmToken = NormalizeRealmToken

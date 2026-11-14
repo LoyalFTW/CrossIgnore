@@ -3,8 +3,6 @@ local CrossIgnore = ns.Addon
 local L = ns.L
 
 local Core = ns.CoreInternals
-local StripRealm = Core.StripRealm
-local MakeKey = Core.MakeKey
 local CopyEntry = Core.CopyEntry
 
 function CrossIgnore:ClearAllIgnoredPlayers()
@@ -14,20 +12,15 @@ function CrossIgnore:ClearAllIgnoredPlayers()
 
     local function collect(list)
         for _, entry in ipairs(list or {}) do
-            local name = entry.name
-            local realm = entry.server or entry.realm
-            if name and realm ~= nil then
-                snapshot[#snapshot + 1] = MakeKey(name, realm)
+            local fullName = self:GetStoredIgnoreName(entry)
+            if fullName then
+                snapshot[#snapshot + 1] = fullName
             end
         end
     end
 
     collect(players)
     collect(overLimitPlayers)
-
-    for _, fullName in ipairs(snapshot) do
-        self:maybeMarkPendingRemoval(fullName)
-    end
 
     for _, fullName in ipairs(snapshot) do
         self:DelIgnore(fullName)
@@ -108,29 +101,8 @@ function CrossIgnore:maybeMarkPendingRemoval(base, realm, addedBy)
 end
 
 function CrossIgnore:DelIgnore(name)
-    local fullName, base, realm = self:NormalizePlayerName(name)
-    if not base or realm == nil then return end
-
-    local removedAny = self:RemoveFromAllAddonLists(base, realm)
-
-    for i = 1, C_FriendList.GetNumIgnores() do
-        local nameOnList = C_FriendList.GetIgnoreName(i)
-        if nameOnList then
-            local _, b, r = self:NormalizePlayerName(nameOnList)
-            if b == base and r == realm then
-                C_FriendList.DelIgnore(nameOnList)
-                removedAny = true
-                break
-            elseif not self.isForever and StripRealm(nameOnList):lower() == base:lower() then
-                C_FriendList.DelIgnore(nameOnList)
-                removedAny = true
-                break
-            end
-        end
-    end
-
-    if removedAny then
-        if self:IsMainFrameShown() then self:RefreshBlockedList() end
+    if self:RemoveIgnoredPlayer(name) and self:IsMainFrameShown() then
+        self:RefreshBlockedList()
     end
 end
 

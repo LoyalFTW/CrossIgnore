@@ -134,8 +134,7 @@ function CrossIgnore:ShowContextMenu(anchorFrame, playerData)
         {
             text = L["REMOVE_ENTRY"],
             func = function()
-                local fullName = playerData.name .. (playerData.server and playerData.server ~= "" and ("-" .. playerData.server) or "")
-                CrossIgnore:DelIgnore(fullName)
+                CrossIgnore:DelIgnore(CrossIgnore:GetStoredIgnoreName(playerData))
                 CrossIgnore:RefreshBlockedList()
             end
         },
