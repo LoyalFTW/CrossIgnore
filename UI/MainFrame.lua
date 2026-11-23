@@ -72,7 +72,7 @@ function UI:BuildMainFrame(CrossIgnore, CrossIgnoreDB)
     UI.Frames.rightPanel = rightPanel
     UI.Frames.panels = panels
 
-    self:BuildNavigation(leftPanel, panels, CrossIgnore)
+    UI.Frames.navigation = self:BuildNavigation(leftPanel, panels, CrossIgnore)
 
     return f
 end

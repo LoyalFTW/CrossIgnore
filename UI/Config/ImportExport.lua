@@ -63,11 +63,11 @@ function CrossIgnore:CreateEIOptions(parent)
     local categories = {
         words = createCheckbox(L["OPTIONS_IMPORT_WORDS"], 12, -341),
         rules = createCheckbox(L["OPTIONS_IMPORT_RULES"], 225, -341),
-        players = createCheckbox(L["IGNORE_LIST_HEADER"], 12, -368),
+        players = createCheckbox(L["OPTIONS_IMPORT_PLAYERS"], 12, -368),
         guilds = createCheckbox(L["OPTIONS_IMPORT_GUILDS"], 225, -368),
     }
 
-    widgets:CreateButton(parent, L["OPTIONS_EXPORT"], "TOP", 0, -160, 112, 24, function()
+    widgets:CreateButton(parent, L["OPTIONS_EXPORT"], "TOP", -65, -160, 112, 24, function()
         local ok, text = pcall(CrossIgnore.ExportLists, CrossIgnore)
         if not ok or not text then
             CrossIgnore:Print(L["OPTIONS_EXPORT_FAILED"])
@@ -76,6 +76,12 @@ function CrossIgnore:CreateEIOptions(parent)
         exportBox:SetText(text)
         exportBox:SetFocus()
         exportBox:HighlightText()
+    end)
+
+    widgets:CreateButton(parent, L["OPTIONS_SHARE_LINK"], "TOP", 65, -160, 112, 24, function()
+        exportBox:ClearFocus()
+        importBox:ClearFocus()
+        CrossIgnore:ShareListsInChat()
     end)
 
     local importButton = widgets:CreateButton(parent, L["OPTIONS_IMPORT"], "TOP", 0, -407, 112, 24, function()
@@ -110,4 +116,13 @@ function CrossIgnore:CreateEIOptions(parent)
             importButton:Disable()
         end)
     end
+end
+
+function CrossIgnore:ReviewSharedLists(text)
+    local ui = ns.UI
+    if not ui.Frames.main then self:CreateUI() end
+    ui.Frames.main:Show()
+    ui.Frames.navigation.optionsEI:Click()
+    CrossIgnoreImportBox:SetText(text)
+    self:Print(L["OPTIONS_SHARE_REVIEW"])
 end

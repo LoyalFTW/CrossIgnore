@@ -27,12 +27,14 @@ function CrossIgnore:OnInitialize()
     if self.isForever then self:RegisterEvent("PLAYER_LOGIN", "OnPlayerLogin") end
 
     self:HookFunctions()
+    self:InitializeListSharing()
 end
 
 function CrossIgnore:OnEnable()
     self:RefreshKnownRealms()
     self:ProcessPendingRemovals()
     self:CheckExpiredIgnores()
+    self:DelayedUpdateIgnoreList()
     if not self._expiryTicker then
         self._expiryTicker = C_Timer.NewTicker(300, function()
             self:CheckExpiredIgnores()
@@ -41,6 +43,7 @@ function CrossIgnore:OnEnable()
 end
 
 function CrossIgnore:OnDisable()
+    self.blizzardIgnoreSnapshot = nil
     if self._expiryTicker then
         self._expiryTicker:Cancel()
         self._expiryTicker = nil

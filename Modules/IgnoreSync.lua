@@ -51,15 +51,18 @@ end
 
 function CrossIgnore:GetBlizzardIgnoreSet()
     local ignoreSet = {}
+    local complete = true
     local numIgnored = C_FriendList.GetNumIgnores()
     for i = 1, numIgnored do
         local playerName = C_FriendList.GetIgnoreName(i)
-        if playerName then
+        if playerName and playerName ~= "" then
             local _, name, server = self:NormalizePlayerName(playerName)
             if name and server ~= nil then ignoreSet[MakeKey(name, server)] = true end
+        else
+            complete = false
         end
     end
-    return ignoreSet
+    return ignoreSet, complete
 end
 
 function CrossIgnore:GetAddonIgnoreSet()
@@ -73,7 +76,23 @@ function CrossIgnore:GetAddonIgnoreSet()
 end
 
 function CrossIgnore:UpdateIgnoreList()
-    local blizzSet = self:GetBlizzardIgnoreSet()
+    local blizzSet, complete = self:GetBlizzardIgnoreSet()
+    if complete then
+        local current = {}
+        for name in pairs(blizzSet) do
+            current[name:lower()] = name
+        end
+        local previous = self.blizzardIgnoreSnapshot
+        self.blizzardIgnoreSnapshot = current
+        if previous then
+            for key, name in pairs(previous) do
+                if not current[key] then
+                    local fullName, base, realm = self:NormalizePlayerName(name)
+                    if fullName then self:RemoveFromAllAddonLists(fullName, base, realm) end
+                end
+            end
+        end
+    end
     local addonSet = self:GetAddonIgnoreSet()
     local list = self.charDB.profile.players
     local overflow = self.charDB.profile.overLimitPlayers

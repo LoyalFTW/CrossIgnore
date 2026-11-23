@@ -50,6 +50,7 @@ Modules/ChatFilterDefaults.lua
 Modules/BlockHandler.lua
 Modules/GuildIgnore.lua
 Modules/ImportExport.lua
+Modules/ShareLists.lua
 
 ## Options
 UI/Config/General.lua
